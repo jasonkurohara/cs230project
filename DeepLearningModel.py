@@ -87,32 +87,32 @@ def filter_words(words):
         "you'll": "you will",
         "you're": "you are"
         }
-        # Replace contractions with their longer forms
-        words = words.split()
-        new_words = []
-        for word in words:
-            if word in contractions:
-                new_text.append(contractions[word])
-            else:
-                new_text.append(word)
-        text = ' '.join(new_text)
+    # Replace contractions with their longer forms
+    words = words.split()
+    new_words = []
+    for word in words:
+        if word in contractions:
+            new_text.append(contractions[word])
+        else:
+            new_text.append(word)
+    text = ' '.join(new_text)
 
-        #format words and remove unwanted characters
-        text = re.sub(r'&amp;', '', text)
-        text = re.sub(r'0,0', '', text)
-        text = re.sub(r'[_"\-;%()|.,+&=*%.,!?:#@\[\]]', ' ', text)
-        text = re.sub(r'\'', ' ', text)
-        text = re.sub(r'\$', ' $ ', text)
-        text = re.sub(r'u s ', ' united states ', text)
-        text = re.sub(r'u n ', ' united nations ', text)
-        text = re.sub(r'u k ', ' united kingdom ', text)
-        text = re.sub(r'j k ', ' jk ', text)
-        text = re.sub(r' s ', ' ', text)
-        text = re.sub(r' yr ', ' year ', text)
-        text = re.sub(r' l g b t ', ' lgbt ', text)
-        text = re.sub(r'0km ', '0 km ', text)
-        
-        return text
+    #format words and remove unwanted characters
+    text = re.sub(r'&amp;', '', text)
+    text = re.sub(r'0,0', '', text)
+    text = re.sub(r'[_"\-;%()|.,+&=*%.,!?:#@\[\]]', ' ', text)
+    text = re.sub(r'\'', ' ', text)
+    text = re.sub(r'\$', ' $ ', text)
+    text = re.sub(r'u s ', ' united states ', text)
+    text = re.sub(r'u n ', ' united nations ', text)
+    text = re.sub(r'u k ', ' united kingdom ', text)
+    text = re.sub(r'j k ', ' jk ', text)
+    text = re.sub(r' s ', ' ', text)
+    text = re.sub(r' yr ', ' year ', text)
+    text = re.sub(r' l g b t ', ' lgbt ', text)
+    text = re.sub(r'0km ', '0 km ', text)
+    
+    return text
 
 
 

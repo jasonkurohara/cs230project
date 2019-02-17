@@ -19,6 +19,7 @@ from nltk.corpus import stopwords
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import median_absolute_error as mae
 from sklearn.metrics import mean_squared_error as mse
+from sklearn.metrics import r2_score as r2
 from sklearn.metrics import accuracy_score as acc
 import matplotlib.pyplot as plt
 
@@ -675,12 +676,6 @@ model.load_weights('./question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}
 predictions = model.predict([x_test,x_test], verbose = True)
 
 
-# In[313]:
-
-# Compare testing loss to training and validating loss
-mse(y_test, predictions)
-
-
 # In[314]:
 
 def unnormalize(price):
@@ -699,11 +694,6 @@ unnorm_y_test = []
 for y in y_test:
     unnorm_y_test.append(unnormalize(y))
 
-
-# In[346]:
-
-# Calculate the median absolute error for the predictions
-mae(unnorm_y_test, unnorm_predictions)
 
 
 # In[362]:
@@ -744,12 +734,23 @@ for value in unnorm_y_test:
         direction_test.append(0)
 
 
-# In[367]:
+
+# Calculate errors
+mae = mae(unnorm_y_test, unnorm_predictions) #median absolute error
+rmse = np.sqrt(mse(y_test, predictions)) # root mean squared error
+r2 = r2(unnorm_y_test, unnorm_predictions) #R squared error
+
+print("Median absolute error: {}".format(mae))
+print("Root mean suqared error: {}".format(rmse))
+print("R squared error: {}".format(r2))
 
 # Calculate if the predicted direction matched the actual direction
 direction = acc(direction_test, direction_pred)
 direction = round(direction,4)*100
 print("Predicted values matched the actual direction {}% of the time.".format(direction))
+
+#Display the graph
+plt.show()
 
 
 # As we can see from the data above, this model struggles to accurately predict the change in the opening price of the Dow Jones Instrustial Average. Given that its median average error is 74.15 and the interquartile range of the actual price change is 142.16 (87.47 + 54.69), this model is about as good as someone who knows the average price change of the Dow. 

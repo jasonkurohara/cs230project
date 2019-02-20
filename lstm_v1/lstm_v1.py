@@ -448,7 +448,7 @@ lengths.describe()
 # These values are chosen to not have an excessively long training time and 
 # balance the number of headlines used and the number of words from each headline.
 max_headline_length = 16
-max_daily_length = 200
+max_daily_length = 500
 pad_headlines = []
 
 for date in int_headlines:

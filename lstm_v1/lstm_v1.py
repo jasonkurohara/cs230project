@@ -33,6 +33,7 @@ from keras.optimizers import Adam, SGD, RMSprop
 from keras import regularizers
 from keras.layers import *
 from keras.layers import add
+import time
 import nltk
 nltk.download('stopwords')
 # In[268]:
@@ -313,7 +314,6 @@ print("Size of Vocabulary:", len(word_counts))
 # Load GloVe's embeddings
 embeddings_index = {}
 with open('glove.840B.300d.txt', encoding='utf-8') as f:
-    print("lets fucking gooooo")
     for line in f:
         values = line.split(' ')
         word = values[0]
@@ -653,7 +653,7 @@ for deeper in [False]:
 
                 history = model.fit([x_train,x_train],
                                     y_train,
-                                    batch_size=128,
+                                    batch_size=256,
                                     epochs=100,
                                     validation_split=0.15,
                                     verbose=True,
@@ -714,7 +714,6 @@ plt.plot(unnorm_y_test)
 plt.title("Predicted (blue) vs Actual (green) Opening Price Changes")
 plt.xlabel("Testing instances")
 plt.ylabel("Change in Opening Price")
-plt.show()
 
 
 # In[318]:
@@ -734,6 +733,20 @@ for value in unnorm_y_test:
         direction_test.append(0)
 
 
+#Total Training time
+
+class TimeHistory(Callback):
+    def on_train_begin(self, logs={}):
+        self.times = []
+
+    def on_epoch_begin(self, epoch, logs={}):
+        self.epoch_time_start = time.time()
+
+    def on_epoch_end(self, epoch, logs={}):
+        self.times.append(time.time() - self.epoch_time_start)
+
+time_callback = TimeHistory()
+#print ("Average epoch training time: {} seconds".format(np.mean(time_callback.times)))
 
 # Calculate errors
 mae = mae(unnorm_y_test, unnorm_predictions) #median absolute error

@@ -1,2 +1,3 @@
 lstm_v1/glove.840B.300d.txt
 data/*
+separate_lstm/glove.840B.300d.txt

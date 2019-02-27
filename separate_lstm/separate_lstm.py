@@ -19,7 +19,7 @@ from sklearn.metrics import accuracy_score as acc
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras import initializers
-from keras.layers import Dropout, Activation, Embedding, Convolution1D, MaxPooling1D, Input, Dense, merge,                          BatchNormalization, Flatten, Reshape, Concatenate
+from keras.layers import Dropout, Activation, Embedding, Convolution1D, MaxPooling1D, Input, Dense, merge, BatchNormalization, Flatten, Reshape, Concatenate
 from keras.layers.recurrent import LSTM, GRU
 from keras.callbacks import Callback, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.models import Model
@@ -52,36 +52,17 @@ news = news[news.Date.isin(dj.Date)]
 print("Removed extra dates in DJ data set: " + str(len(set(dj.Date))))
 print("Removed extra dates in DJ data set: " + str(len(set(news.Date))))
 
-
-# In[283]:
-
 # Calculate the difference in opening prices between the following and current day.
 # The model will try to predict how much the Open value will change beased on the news.
 dj = dj.set_index('Date').diff(periods=1)
 dj['Date'] = dj.index
 dj = dj.reset_index(drop=True)
-# Remove unneeded features
-dj = dj.drop(['High','Low','Close','Volume','Adj Close'], 1)
 
-
-# In[284]:
+dj = dj.drop(['High','Low','Close','Volume','Adj Close'], 1) # Remove unneeded features from the dataset
 
 dj.head()
-
-
-# In[285]:
-
-# Remove top row since it has a null value.
-dj = dj[dj.Open.notnull()]
-
-
-# In[286]:
-
-# Check if there are any more null values.
-dj.isnull().sum()
-
-
-# In[287]:
+dj = dj[dj.Open.notnull()] # Remove top row since it has a null value.
+dj.isnull().sum() # Check if there are any more null values.
 
 # Create a list of the opening prices and their corresponding daily headlines from the news
 price = []
@@ -100,22 +81,12 @@ for row in dj.iterrows():
         print(len(price))
 
 
-# In[288]:
-
-# Compare lengths to ensure they are the same
-print(len(price))
-print(len(headlines))
-
-
-# In[289]:
+print("Length of prices: " + str(len(price))) # Compare lengths to ensure they are the same
+print("Length of headlines: " + str(len(headlines)))
 
 # Compare the number of headlines for each day
-print(max(len(i) for i in headlines))
-print(min(len(i) for i in headlines))
-#print(np.mean(len(i) for i in headlines))
-
-
-# In[290]:
+print("Max number of headlines in a day: " + str(max(len(i) for i in headlines)))
+print("Max number of headlines in a day: " + str(min(len(i) for i in headlines)))
 
 # A list of contractions from http://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python
 contractions = { 
@@ -195,13 +166,11 @@ contractions = {
 }
 
 
-# In[291]:
-
+# FUNCTION clean_text = The purpose of this funciton is to remove unwanted characters
+# and format the text to create fewer null words embeddings
 def clean_text(text, remove_stopwords = True):
-    '''Remove unwanted characters and format the text to create fewer nulls word embeddings'''
     
-    # Convert words to lower case
-    text = text.lower()
+    text = text.lower() # Convert words to lower case
     
     # Replace contractions with their longer forms 
     if True:
@@ -238,9 +207,6 @@ def clean_text(text, remove_stopwords = True):
 
     return text
 
-
-# In[292]:
-
 # Clean the headlines
 clean_headlines = []
 
@@ -251,13 +217,8 @@ for daily_headlines in headlines:
     clean_headlines.append(clean_daily_headlines)
 
 
-# In[293]:
-
 # Take a look at some headlines to ensure everything was cleaned well
-clean_headlines[0]
-
-
-# In[294]:
+print("VERIFY CLEANING TOOK PLACE: " + str(clean_headlines[0]))
 
 # Find the number of times each word was used and the size of the vocabulary
 word_counts = {}
@@ -273,9 +234,7 @@ for date in clean_headlines:
 print("Size of Vocabulary:", len(word_counts))
 
 
-# In[323]:
-
-# Load GloVe's embeddings
+# LOAD GLOVE EMBEDDINGS
 embeddings_index = {}
 with open('glove.840B.300d.txt', encoding='utf-8') as f:
     for line in f:
@@ -285,9 +244,6 @@ with open('glove.840B.300d.txt', encoding='utf-8') as f:
         embeddings_index[word] = embedding
 
 print('Word embeddings:', len(embeddings_index))
-
-
-# In[325]:
 
 # Find the number of words that are missing from GloVe, and are used more than our threshold.
 missing_words = 0

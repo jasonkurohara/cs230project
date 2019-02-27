@@ -566,7 +566,7 @@ def build_model():
     #model.add(merge([model1, model2], mode='concat'))
     model = Add()([model1.output, model2.output]) #concatenation
 
-    #MAJOR CHANGE HERE
+    #MAJOR CHANGE
     model.add(LSTM(rnn_output_size, 
                     activation=None,
                     kernel_initializer=weights,

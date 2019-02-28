@@ -714,6 +714,8 @@ plt.plot(unnorm_y_test)
 plt.title("Predicted (blue) vs Actual (green) Opening Price Changes")
 plt.xlabel("Testing instances")
 plt.ylabel("Change in Opening Price")
+plt.savefig("PredictedvActual.png")
+plt.savefig("PredictedvActual.png")
 
 
 # In[318]:

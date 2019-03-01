@@ -260,10 +260,7 @@ print("Number of words missing from GloVe:", missing_words)
 print("Percent of words that are missing from vocabulary: {}%".format(missing_ratio))
 
 
-# In[296]:
-
 # Limit the vocab that we will use to words that appear ≥ threshold or are in GloVe
-
 #dictionary to convert words to integers
 vocab_to_int = {} 
 
@@ -431,15 +428,9 @@ x_test = np.array(x_test)
 y_train = np.array(y_train)
 y_test = np.array(y_test)
 
-
-# In[308]:
-
 # Check the lengths
 print(len(x_train))
 print(len(x_test))
-
-
-# In[310]:
 
 filter_length1 = 3
 filter_length2 = 5
@@ -520,13 +511,16 @@ def build_model():
     model = Sequential()
 
     #model.add(merge([model1, model2], mode='concat'))
-    model = Add()([model1.output, model2.output]) #concatenation
+    # model = Add()([model1.output, model2.output]) #concatenation #<-- working version
+    #model = concatenate([model1, model2])
+    model = Add()([model1.output, model2.output]) #concatenation 
+    
 
     #MAJOR CHANGE
-    model.add(LSTM(rnn_output_size, 
+    model = LSTM(rnn_output_size, 
                     activation=None,
                     kernel_initializer=weights,
-                    dropout = dropout))
+                    dropout = dropout)(model)
 
     
     model = Dense(hidden_dims, kernel_initializer=weights)(model)
@@ -718,22 +712,4 @@ def padding_news(news):
     return padded_news
 
 
-# In[368]:
-
-# Default news that you can use
-create_news = "Leaked document reveals Facebook conducted research to target emotionally vulnerable and insecure youth.                Woman says note from Chinese 'prisoner' was hidden in new purse.                21,000 AT&T workers poised for Monday strike                housands march against Trump climate policies in D.C., across USA                Kentucky judge won't hear gay adoptions because it's not in the child's \"best interest\"                Multiple victims shot in UTC area apartment complex                Drones Lead Police to Illegal Dumping in Riverside County | NBC Southern California                An 86-year-old Californian woman has died trying to fight a man who was allegedly sexually assaulting her 61-year-old friend.                Fyre Festival Named in $5Million+ Lawsuit after Stranding Festival-Goers on Island with Little Food, No Security.                The \"Greatest Show on Earth\" folds its tent for good                U.S.-led fight on ISIS have killed 352 civilians: Pentagon                Woman offers undercover officer sex for $25 and some Chicken McNuggets                Ohio bridge refuses to fall down after three implosion attempts                Jersey Shore MIT grad dies in prank falling from library dome                New York graffiti artists claim McDonald's stole work for latest burger campaign                SpaceX to launch secretive satellite for U.S. intelligence agency                Severe Storms Leave a Trail of Death and Destruction Through the U.S.                Hamas thanks N. Korea for its support against ‘Israeli occupation’                Baker Police officer arrested for allegedly covering up details in shots fired investigation                Miami doctor’s call to broker during baby’s delivery leads to $33.8 million judgment                Minnesota man gets 15 years for shooting 5 Black Lives Matter protesters                South Australian woman facing possible 25 years in Colombian prison for drug trafficking                The Latest: Deal reached on funding government through Sept.                Russia flaunts Arctic expansion with new military bases"
-
-clean_news = clean_text(create_news)
-
-int_news = news_to_int(clean_news)
-
-pad_news = padding_news(int_news)
-
-pad_news = np.array(pad_news).reshape((1,-1))
-
-pred = model.predict([pad_news,pad_news])
-
-price_change = unnormalize(pred)
-
-print("The Dow should open: {} from the previous open.".format(np.round(price_change[0][0],2)))
 

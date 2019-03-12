@@ -2,9 +2,14 @@
 # coding: utf-8
 
 # # Predicting the Dow Jones with News
+
 # The goal of this project is to use the top, daily news headlines from Reddit to predict the movement of the Dow Jones Industrial Average. The data for this project spans from 2008-08-08 to 2016-07-01, and is from this [Kaggle dataset](https://www.kaggle.com/aaron7sun/stocknews). 
+# 
 # The news from a given day will be used to predict the difference in opening price between that day, and the following day. This method is chosen because it should allow all of the day's news to be incorporated into the price compared to closing price, which could only incorporate the day's morning and afternoon news.
+# 
 # For this project, we will use GloVe to create our word embeddings and CNNs followed by LSTMs to build our model. This model is based off the work done in this paper https://www.aclweb.org/anthology/C/C16/C16-1229.pdf.
+
+# In[333]:
 
 import pandas as pd
 import numpy as np
@@ -17,9 +22,10 @@ from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import r2_score as r2
 from sklearn.metrics import accuracy_score as acc
 import matplotlib.pyplot as plt
+
 from keras.models import Sequential
 from keras import initializers
-from keras.layers import Dropout, Activation, Embedding, Convolution1D, MaxPooling1D, Input, Dense, merge, BatchNormalization, Flatten, Reshape, Concatenate
+from keras.layers import Dropout, Activation, Embedding, Convolution1D, MaxPooling1D, Input, Dense, merge,                          BatchNormalization, Flatten, Reshape, Concatenate
 from keras.layers.recurrent import LSTM, GRU
 from keras.callbacks import Callback, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.models import Model
@@ -30,39 +36,88 @@ from keras.layers import add
 import time
 import nltk
 nltk.download('stopwords')
-""""
+# In[268]:
 
-dj = pd.read_csv("../data/DowJones.csv") #read in stock prices
-news = pd.read_csv("../data/News.csv") #read in news data
+dj = pd.read_csv("DowJones.csv")
+news = pd.read_csv("News.csv")
+
+
+# ## Inspect the data
+
+# In[269]:
+
 dj.head()
+
+
+# In[270]:
+
 dj.isnull().sum()
+
+
+# In[271]:
+
 news.isnull().sum()
+
+
+# In[272]:
+
 news.head()
 
-print("Dow Jones Raw Data Shape: " + str(dj.shape))
-print("Raw News Data Shae: " + str(news.shape))
+
+# In[273]:
+
+print(dj.shape)
+print(news.shape)
+
+
+# In[274]:
 
 # Compare the number of unique dates. We want matching values.
-print("Number of Unique Dates in DJ data set: " + str(len(set(dj.Date))))
-print("Number of Unique Dates in news headlines: " + str(len(set(news.Date))))
+print(len(set(dj.Date)))
+print(len(set(news.Date)))
+
+
+# In[275]:
 
 # Remove the extra dates that are in news
 news = news[news.Date.isin(dj.Date)]
 
-print("Removed extra dates in DJ data set: " + str(len(set(dj.Date))))
-print("Removed extra dates in DJ data set: " + str(len(set(news.Date))))
+
+# In[276]:
+
+print(len(set(dj.Date)))
+print(len(set(news.Date)))
+
+
+# In[283]:
 
 # Calculate the difference in opening prices between the following and current day.
 # The model will try to predict how much the Open value will change beased on the news.
 dj = dj.set_index('Date').diff(periods=1)
 dj['Date'] = dj.index
 dj = dj.reset_index(drop=True)
+# Remove unneeded features
+dj = dj.drop(['High','Low','Close','Volume','Adj Close'], 1)
 
-dj = dj.drop(['High','Low','Close','Volume','Adj Close'], 1) # Remove unneeded features from the dataset
+
+# In[284]:
 
 dj.head()
-dj = dj[dj.Open.notnull()] # Remove top row since it has a null value.
-dj.isnull().sum() # Check if there are any more null values.
+
+
+# In[285]:
+
+# Remove top row since it has a null value.
+dj = dj[dj.Open.notnull()]
+
+
+# In[286]:
+
+# Check if there are any more null values.
+dj.isnull().sum()
+
+
+# In[287]:
 
 # Create a list of the opening prices and their corresponding daily headlines from the news
 price = []
@@ -81,40 +136,22 @@ for row in dj.iterrows():
         print(len(price))
 
 
-print("Length of prices: " + str(len(price))) # Compare lengths to ensure they are the same
-print("Length of headlines: " + str(len(headlines)))
+# In[288]:
+
+# Compare lengths to ensure they are the same
+print(len(price))
+print(len(headlines))
+
+
+# In[289]:
 
 # Compare the number of headlines for each day
-print("Max number of headlines in a day: " + str(max(len(i) for i in headlines)))
-print("Max number of headlines in a day: " + str(min(len(i) for i in headlines)))
+print(max(len(i) for i in headlines))
+print(min(len(i) for i in headlines))
+#print(np.mean(len(i) for i in headlines))
 
 
-
-
-
-# headlines_dj = np.zeros((1988,220))
-# temp = np.zeros((1988,200))
-# print("AAAAAAAAA")
-
-# temp = np.array(temp)
-# print(temp.shape)
-# print(type(temp))
-# #headlines_dj[0:1988][0:200]= temp[0:1988][0:200]
-# for row in range(headlines_dj.shape[0]):
-#     headlines_dj[row][0:200] = temp[row]
-
-# headlines_dj = np.zeros((1988,220))
-# #headlines_dj[:][0:200]= temp_input[:][:]
-
-# for row in range(headlines_dj.shape[0]):
-#     if 1 <= row <= 20:
-#         print(row)
-#         headlines_dj[row][200:200+row] = price[0:row]
-
-#     else:
-#         headlines_dj[row][200:] = price[row-21:row-1]
-
-
+# In[290]:
 
 # A list of contractions from http://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python
 contractions = { 
@@ -194,11 +231,13 @@ contractions = {
 }
 
 
-# FUNCTION clean_text = The purpose of this funciton is to remove unwanted characters
-# and format the text to create fewer null words embeddings
+# In[291]:
+
 def clean_text(text, remove_stopwords = True):
+    '''Remove unwanted characters and format the text to create fewer nulls word embeddings'''
     
-    text = text.lower() # Convert words to lower case
+    # Convert words to lower case
+    text = text.lower()
     
     # Replace contractions with their longer forms 
     if True:
@@ -235,6 +274,9 @@ def clean_text(text, remove_stopwords = True):
 
     return text
 
+
+# In[292]:
+
 # Clean the headlines
 clean_headlines = []
 
@@ -245,8 +287,13 @@ for daily_headlines in headlines:
     clean_headlines.append(clean_daily_headlines)
 
 
+# In[293]:
+
 # Take a look at some headlines to ensure everything was cleaned well
-print("VERIFY CLEANING TOOK PLACE: " + str(clean_headlines[0]))
+clean_headlines[0]
+
+
+# In[294]:
 
 # Find the number of times each word was used and the size of the vocabulary
 word_counts = {}
@@ -262,17 +309,21 @@ for date in clean_headlines:
 print("Size of Vocabulary:", len(word_counts))
 
 
-# LOAD GLOVE EMBEDDINGS
+# In[323]:
+
+# Load GloVe's embeddings
 embeddings_index = {}
-with open('../data/glove.840B.300d.txt', encoding='utf-8') as f:
+with open('glove.840B.300d.txt', encoding='utf-8') as f:
     for line in f:
         values = line.split(' ')
         word = values[0]
         embedding = np.asarray(values[1:], dtype='float32')
         embeddings_index[word] = embedding
 
-
 print('Word embeddings:', len(embeddings_index))
+
+
+# In[325]:
 
 # Find the number of words that are missing from GloVe, and are used more than our threshold.
 missing_words = 0
@@ -289,7 +340,10 @@ print("Number of words missing from GloVe:", missing_words)
 print("Percent of words that are missing from vocabulary: {}%".format(missing_ratio))
 
 
+# In[296]:
+
 # Limit the vocab that we will use to words that appear ≥ threshold or are in GloVe
+
 #dictionary to convert words to integers
 vocab_to_int = {} 
 
@@ -324,9 +378,6 @@ print("Percent of Words we will use: {}%".format(usage_ratio))
 embedding_dim = 300
 
 nb_words = len(vocab_to_int)
-#SAVE THIS SHIT^^^^^^
-
-
 # Create matrix with default values of zero
 word_embedding_matrix = np.zeros((nb_words, embedding_dim))
 for word, i in vocab_to_int.items():
@@ -449,84 +500,35 @@ print(max(norm_price))
 print(np.mean(norm_price))
 
 
-####################################
-print("shape of headlines: "+ str(len(pad_headlines)))
-print("shape of price: " + str(len(price)))
-print("shape of headlines: "+ str(np.array(pad_headlines).shape))
-print("shape of price: " + str(np.array(price).shape))
+# In[307]:
 
-#temp_input = np.copy(np.array(pad_headlines))
-
-
-# headlines_dj = np.zeros((1988,220))
-# temp = np.copy(pad_headlines)
-# print("AAAAAAAAA")
-
-# temp = np.array(temp)
-# print(temp.shape)
-# print(type(temp))
-# #headlines_dj[:][0:200]= temp
-# for row in range(headlines_dj.shape[0]):
-#     headlines_dj[row][0:200]=temp[row]
-
-# for row in range(headlines_dj.shape[0]):
-#     if 1 <= row <= 20:
-#         print(row)
-#         headlines_dj[row][200:200+row] = price[0:row]
-
-#     else:
-#         headlines_dj[row][200:] = price[row-21:row-1]
-
-# x_train, x_test, y_train, y_test = train_test_split(headlines_dj, norm_price, test_size = 0.15, random_state = 2)
-
+# Split data into training and testing sets.
+# Validating data will be created during training.
 x_train, x_test, y_train, y_test = train_test_split(pad_headlines, norm_price, test_size = 0.15, random_state = 2)
-
-
-        
 
 x_train = np.array(x_train)
 x_test = np.array(x_test)
 y_train = np.array(y_train)
 y_test = np.array(y_test)
 
-x2_train = np.zeros((x_train.shape[0],20))
 
-for row in range(x2_train.shape[0]):
-    if 1 <= row <= 20:
-        print(row)
-        x2_train[row][0:row] = price[0:row]
+# In[308]:
 
-    else:
-        x2_train[row] = price[row-21:row-1]
-
-# from tempfile import TemporaryFile
-# outfile = TemporaryFile()
-print("SAVING ARRAYS")
+# Check the lengths
+print(len(x_train))
+print(len(x_test))
 
 
+# In[310]:
 
-#np.savez("data.npz",x_train=x_train,y_train=y_train,y_test=y_test,x_test=x_test,x2_train = x2_train,embedding_dim=embedding_dim,nb_words=nb_words,word_embedding_matrix=word_embedding_matrix)
-# npzfile=np.load("data.npz")
-# x_train = npzfile["x_train"]
-# x_test = npzfile["x_train"]
-# y_train = npzfile["x_train"]
-# y_test = npzfile["x_train"]
-# x2_train = npzfile["x2_train"]
-# embedding_dim = npzfile["embedding_dim"]
-# nb_words=npzfile["nb_words"]
-# word_embedding_matrix=npzfile["word_embedding_matrix"]
-# max_daily_length=200
-"""
-import dill                            
-filename = 'globalsave.pkl'
-#dill.dump_session(filename)  #Save session
 
+import dill                        
+filename = '../data/globalsaveMODEL1.pkl'
+dill.dump_session(filename)  #Save session
 dill.load_session(filename) # load the session
 
-print("Length of x_train: "+ str(len(x_train)))
-print("shape of x_train: "+ str(x_train.shape))
-print("nb_words: " + str(nb_words))
-print("X2 shape: "+ str(x2_train.shape))
+
+
 
 
 filter_length1 = 3
@@ -546,8 +548,7 @@ if wider == True:
     hidden_dims *= 2
 
 
-def build_model(x2_shape,x2_train):
-    
+def build_model():
     
     model1 = Sequential()
     
@@ -555,7 +556,6 @@ def build_model(x2_shape,x2_train):
                          embedding_dim,
                          weights=[word_embedding_matrix], 
                          input_length=max_daily_length))
-
     model1.add(Dropout(dropout))
     
     model1.add(Convolution1D(filters = nb_filter, 
@@ -575,12 +575,8 @@ def build_model(x2_shape,x2_train):
                    activation=None,
                    kernel_initializer=weights,
                    dropout = dropout))
-
-    print("PRINTING MODEL1.OUTPUT AFTER LSTM: ")
-    print(model1.output)
     
     ####
-
 
     model2 = Sequential()
     
@@ -610,20 +606,26 @@ def build_model(x2_shape,x2_train):
                     dropout = dropout))
     
     ####
-    print("PRINTING MODEL2.OUTPUT")
-    print(type(model2.output))
-    print(model2.output)
 
-
-    model3=Sequential()
-
-    model3.add(LSTM(1, batch_input_shape=(256, x2_train.shape[1], x2_train.shape[2]), stateful=True))
- 
     model = Sequential()
 
-    # CUT OUT MODEL3.OUTPUT AND THIS MODEL WILL COMPILE
-    model = Concatenate(axis=0)([model1.output, model2.output, tf.keras.backend.transpose(model3.output)])
+    #model.add(merge([model1, model2], mode='concat'))
+    model = Add()([model1.output, model2.output])
+    
+    # model.add(Dense(hidden_dims, kernel_initializer=weights))
+    # model.add(Dropout(dropout))
+    
+    # if deeper == True:
+    #     model.add(Dense(hidden_dims//2, kernel_initializer=weights))
+    #     model.add(Dropout(dropout))
 
+    # model.add(Dense(1, 
+    #                 kernel_initializer = weights,
+    #                 name='output'))
+
+    # model.compile(loss='mean_squared_error',
+    #               optimizer=Adam(lr=learning_rate,clipvalue=1.0))
+    # return model
     model = Dense(hidden_dims, kernel_initializer=weights)(model)
     model = Dropout(dropout)(model)
     
@@ -634,28 +636,20 @@ def build_model(x2_shape,x2_train):
     model = Dense(1, 
                     kernel_initializer = weights,
                     name='output')(model)
-
-    print('model1: ' + str(model1))
-    print(model1.input)
-    print('model2: ' + str(model2))
-    print(model2.input)
-    print('model3: ' + str(model3))
-    print(model3.input)
-    merged_model = Model(inputs=[model1.input, model2.input, model3.input], outputs=model)
+    merged_model = Model([model1.input, model2.input],model)
     merged_model.compile(loss='mean_squared_error',
                   optimizer=Adam(lr=learning_rate,clipvalue=1.0))
-    print(merged_model)
     return merged_model
 
 
+# In[311]:
 
 # Use grid search to help find a better model
 for deeper in [False]:
     for wider in [True,False]:
         for learning_rate in [0.001]:
             for dropout in [0.3, 0.5]:
-                x2_train = x2_train.reshape(x2_train.shape[0],1,x2_train.shape[1])
-                model = build_model(x2_train.shape,x2_train)
+                model = build_model()
                 print()
                 print("Current model: Deeper={}, Wider={}, LR={}, Dropout={}".format(
                     deeper,wider,learning_rate,dropout))
@@ -666,9 +660,8 @@ for deeper in [False]:
                 callbacks = [ModelCheckpoint(save_best_weights, monitor='val_loss', save_best_only=True),
                              EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='auto'),
                              ReduceLROnPlateau(monitor='val_loss', factor=0.2, verbose=1, patience=3)]
-                print('model: ' + str(model))
 
-                history = model.fit([x_train,x_train, x2_train],
+                history = model.fit([x_train,x_train],
                                     y_train,
                                     batch_size=256,
                                     epochs=100,
@@ -690,7 +683,7 @@ model = build_model()
 
 model.load_weights('./question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout))
-predictions = model.predict([x_test,x_test,x_test], verbose = True)
+predictions = model.predict([x_test,x_test], verbose = True)
 
 
 # In[314]:
@@ -731,6 +724,8 @@ plt.plot(unnorm_y_test)
 plt.title("Predicted (blue) vs Actual (green) Opening Price Changes")
 plt.xlabel("Testing instances")
 plt.ylabel("Change in Opening Price")
+plt.savefig("PredictedvActual.png")
+plt.savefig("PredictedvActual.png")
 
 
 # In[318]:
@@ -821,4 +816,21 @@ def padding_news(news):
     return padded_news
 
 
+# In[368]:
 
+# Default news that you can use
+create_news = "Leaked document reveals Facebook conducted research to target emotionally vulnerable and insecure youth.                Woman says note from Chinese 'prisoner' was hidden in new purse.                21,000 AT&T workers poised for Monday strike                housands march against Trump climate policies in D.C., across USA                Kentucky judge won't hear gay adoptions because it's not in the child's \"best interest\"                Multiple victims shot in UTC area apartment complex                Drones Lead Police to Illegal Dumping in Riverside County | NBC Southern California                An 86-year-old Californian woman has died trying to fight a man who was allegedly sexually assaulting her 61-year-old friend.                Fyre Festival Named in $5Million+ Lawsuit after Stranding Festival-Goers on Island with Little Food, No Security.                The \"Greatest Show on Earth\" folds its tent for good                U.S.-led fight on ISIS have killed 352 civilians: Pentagon                Woman offers undercover officer sex for $25 and some Chicken McNuggets                Ohio bridge refuses to fall down after three implosion attempts                Jersey Shore MIT grad dies in prank falling from library dome                New York graffiti artists claim McDonald's stole work for latest burger campaign                SpaceX to launch secretive satellite for U.S. intelligence agency                Severe Storms Leave a Trail of Death and Destruction Through the U.S.                Hamas thanks N. Korea for its support against ‘Israeli occupation’                Baker Police officer arrested for allegedly covering up details in shots fired investigation                Miami doctor’s call to broker during baby’s delivery leads to $33.8 million judgment                Minnesota man gets 15 years for shooting 5 Black Lives Matter protesters                South Australian woman facing possible 25 years in Colombian prison for drug trafficking                The Latest: Deal reached on funding government through Sept.                Russia flaunts Arctic expansion with new military bases"
+
+clean_news = clean_text(create_news)
+
+int_news = news_to_int(clean_news)
+
+pad_news = padding_news(int_news)
+
+pad_news = np.array(pad_news).reshape((1,-1))
+
+pred = model.predict([pad_news,pad_news])
+
+price_change = unnormalize(pred)
+
+print("The Dow should open: {} from the previous open.".format(np.round(price_change[0][0],2)))

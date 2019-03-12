@@ -19,7 +19,8 @@ from sklearn.metrics import accuracy_score as acc
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras import initializers
-from keras.layers import Dropout, Activation, Embedding, Convolution1D, MaxPooling1D, Input, Dense, merge, BatchNormalization, Flatten, Reshape, Concatenate
+from keras.layers import Dropout, Activation, Embedding, Convolution1D, MaxPooling1D, Input
+from keras.layers import Dense, merge, BatchNormalization, Flatten, Reshape, Concatenate
 from keras.layers.recurrent import LSTM, GRU
 from keras.callbacks import Callback, ModelCheckpoint, EarlyStopping, ReduceLROnPlateau
 from keras.models import Model
@@ -30,8 +31,10 @@ from keras.layers import add
 import time
 import nltk
 nltk.download('stopwords')
-"""
 
+
+
+"""
 dj = pd.read_csv("../data/DowJones.csv") #read in stock prices
 news = pd.read_csv("../data/News.csv") #read in news data
 dj.head()
@@ -632,7 +635,7 @@ print("shape of y_test"+str(y_test.shape))
 
 
 
-
+x2_train = np.reshape(x2_train,(x2_train.shape[0],1,x2_train.shape[1]))
 
 
 filter_length1 = 3
@@ -657,110 +660,84 @@ if wider == True:
 
 
 
-def build_model(x2_shape,x2_train):
+def build_model():
     
     
-    model1 = Sequential()
-    
-    model1.add(Embedding(nb_words, 
+    cnn1 = Sequential()
+    cnn1.add(Embedding(nb_words, 
                          embedding_dim,
                          weights=[word_embedding_matrix], 
                          input_length=max_daily_length))
 
-    model1.add(Dropout(dropout))
-    
-    model1.add(Convolution1D(filters = nb_filter, 
+    cnn1.add(Dropout(dropout)) 
+
+    cnn1.add(Convolution1D(filters = nb_filter, 
                              kernel_size = filter_length1, 
                              padding = 'same',
                             activation = 'relu'))
-    model1.add(Dropout(dropout))
-    
+
+    cnn1.add(Dropout(dropout))
+
     if deeper == True:
-        model1.add(Convolution1D(filters = nb_filter, 
+        cnn1.add(Convolution1D(filters = nb_filter, 
                                  kernel_size = filter_length1, 
                                  padding = 'same',
                                 activation = 'relu'))
-        model1.add(Dropout(dropout))
-    
-    model1.add(LSTM(rnn_output_size, 
+        cnn1.add(Dropout(dropout))
+
+    cnn1.add(LSTM(rnn_output_size, 
                    activation=None,
                    kernel_initializer=weights,
                    dropout = dropout))
 
-    print("PRINTING MODEL1.OUTPUT AFTER LSTM: ")
-    print(model1.output)
     
-    ####
 
-
-    model2 = Sequential()
-    
-    model2.add(Embedding(nb_words, 
+    cnn2 = Sequential()
+    cnn2.add(Embedding(nb_words, 
                          embedding_dim,
                          weights=[word_embedding_matrix], 
                          input_length=max_daily_length))
-    model2.add(Dropout(dropout))
-    
-    
-    model2.add(Convolution1D(filters = nb_filter, 
+    cnn2.add(Dropout(dropout))
+    cnn2.add(Convolution1D(filters = nb_filter, 
                              kernel_size = filter_length2, 
                              padding = 'same',
                              activation = 'relu'))
-    model2.add(Dropout(dropout))
+    cnn2.add(Dropout(dropout))
     
     if deeper == True:
-        model2.add(Convolution1D(filters = nb_filter, 
+        cnn2.add(Convolution1D(filters = nb_filter, 
                                  kernel_size = filter_length2, 
                                  padding = 'same',
                                  activation = 'relu'))
-        model2.add(Dropout(dropout))
+        cnn2.add(Dropout(dropout))
     
-    model2.add(LSTM(rnn_output_size, 
+    cnn2.add(LSTM(rnn_output_size, 
                     activation=None,
                     kernel_initializer=weights,
                     dropout = dropout))
     
-    ####
 
+    djlstm=Sequential()
+    djlstm.add(LSTM(4, input_shape=(1, lookback), kernel_initializer = weights))
 
-    model3=Sequential()
-
-    model3.add(LSTM(1, input_shape=(1, lookback), kernel_initializer = weights))
-    # model3.add(LSTM(1, batch_input_shape=(256, x2_train.shape[1], x2_train.shape[2]), stateful=True))
+    full_conn = Sequential()
  
-    model = Sequential()
-
-    # CUT OUT MODEL3.OUTPUT AND THIS MODEL WILL COMPILE
-   # model = Concatenate(axis=0)([model1.output, model2.output, tf.keras.backend.transpose(model3.output)])
-    model = Add()([model1.output,model2.output])
-    model = Concatenate()([model, model3.output])
-    model = Dense(hidden_dims, kernel_initializer=weights)(model)
-    model = Dropout(dropout)(model)
+    full_conn = Add()([cnn1.output,cnn2.output])
+    full_conn = Concatenate()([full_conn, djlstm.output])
+    full_conn = Dense(hidden_dims, kernel_initializer=weights)(full_conn)
+    full_conn = Dropout(dropout)(full_conn)
     
     if deeper == True:
-        model = Dense(hidden_dims//2, kernel_initializer=weights)(model)
-        model = Dropout(dropout)(model)
+        full_conn = Dense(hidden_dims//2, kernel_initializer=weights)(full_conn)
+        full_conn = Dropout(dropout)(full_conn)
 
-    model = Dense(1, 
-                    kernel_initializer = weights,
-                    name='output')(model)
+    full_conn = Dense(1,kernel_initializer = weights, name='output')(full_conn)
 
-    print('model1: ' + str(model1))
-    print(model1.input)
-    print('model2: ' + str(model2))
-    print(model2.input)
-    print('model3: ' + str(model3))
-    print(model3.input)
-
-
-
-
-
-    merged_model = Model(inputs=[model1.input, model2.input, model3.input], outputs=model)
-    merged_model.compile(loss='mean_squared_error',
+    complete_model = Model(inputs=[cnn1.input, cnn2.input, djlstm.input], outputs=full_conn)
+    complete_model.compile(loss='mean_squared_error',
                   optimizer=Adam(lr=learning_rate,clipvalue=1.0))
-    print(merged_model)
-    return merged_model
+    print(complete_model)
+    return complete_model
 
 
 
@@ -772,9 +749,9 @@ for deeper in [False]:
     for wider in [True,False]:
         for learning_rate in [0.001]:
             for dropout in [0.3, 0.5]:
-                x2_train = np.reshape(x2_train,(x2_train.shape[0],1,x2_train.shape[1]))
+                
                # trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-                model = build_model(x2_train.shape,x2_train)
+                model = build_model()
                 print()
                 print("Current model: Deeper={}, Wider={}, LR={}, Dropout={}".format(
                     deeper,wider,learning_rate,dropout))
@@ -789,7 +766,7 @@ for deeper in [False]:
 
                 history = model.fit([x_train,x_train, x2_train],
                                     y_train,
-                                    batch_size=128,
+                                    batch_size=256,
                                     epochs=100,
                                     validation_split=0.15,
                                     verbose=True,

@@ -603,25 +603,23 @@ def normalize(price):
 
 lookback = 5
 
-x2_train=dataset
-x2_train = x2_train[0:1988][:]
+lookback_array = np.zeros((dataset.shape[0],lookback))
 
 
-temp = np.zeros((1988,lookback))
-
-
-for row in range(x2_train.shape[0]):
+for row in range(dataset.shape[0]):
  #   print(row)
     if 1 <= row < lookback:
-        temp[row][0:row] = x2_train[0:row][0]
+        lookback_array[row][0:row] = dataset[0:row][0]
 
     elif row >= lookback:
-        temp[row] = x2_train[(row-lookback):row][0]
+        lookback_array[row] = x2_train[(row-lookback):row][0]
 
 
-x2_train = temp
-x2_test = x2_train[1689:][:] 
-x2_train = x2_train[0:1689][:]
+#x2_train = temp
+x2_test = lookback_array[1689:][:] 
+x2_train = lookback_array[0:1689][:]
+
+
 
 
 print("shape of x2_test: " + str(x2_test.shape))
@@ -654,11 +652,7 @@ if wider == True:
 
 
 
-
-
-
 def build_model():
-    
     
     cnn1 = Sequential()
     cnn1.add(Embedding(nb_words, 
@@ -715,7 +709,7 @@ def build_model():
     
 
     djlstm=Sequential()
-    djlstm.add(LSTM(4, input_shape=(1, lookback), kernel_initializer = weights))
+    djlstm.add(LSTM(4, input_shape=(1, lookback), kernel_initializer = weights,activation='relu'))
 
     full_conn = Sequential()
  
@@ -735,9 +729,6 @@ def build_model():
                   optimizer=Adam(lr=learning_rate,clipvalue=1.0))
     print(complete_model)
     return complete_model
-
-
-
 
 
 

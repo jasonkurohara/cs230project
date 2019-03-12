@@ -581,11 +581,11 @@ def normalize(price):
 # In[305]:
 
 #norm_price = []
-for row in range(dataset.shape[0]):
-    dataset[row][0] = normalize(dataset[row][0])
+# for row in range(dataset.shape[0]):
+#     dataset[row][0] = normalize(dataset[row][0])
 
 
-# In[306]:
+# # In[306]:
 
 # Check that normalization worked well
 # print(min(norm_price))
@@ -725,15 +725,15 @@ def build_model(x2_shape,x2_train):
 
     model3=Sequential()
 
-    model3.add(LSTM(4, input_shape=(1, lookback)))
+    model3.add(LSTM(1, input_shape=(1, lookback), kernel_initializer = weights))
     # model3.add(LSTM(1, batch_input_shape=(256, x2_train.shape[1], x2_train.shape[2]), stateful=True))
  
     model = Sequential()
 
     # CUT OUT MODEL3.OUTPUT AND THIS MODEL WILL COMPILE
    # model = Concatenate(axis=0)([model1.output, model2.output, tf.keras.backend.transpose(model3.output)])
-
-    model = Concatenate()([model1.output, model2.output, model3.output],)
+    model = Add()([model1.output,model2.output])
+    model = Concatenate()([model, model3.output])
     model = Dense(hidden_dims, kernel_initializer=weights)(model)
     model = Dropout(dropout)(model)
     
@@ -789,7 +789,7 @@ for deeper in [False]:
 
                 history = model.fit([x_train,x_train, x2_train],
                                     y_train,
-                                    batch_size=256,
+                                    batch_size=128,
                                     epochs=100,
                                     validation_split=0.15,
                                     verbose=True,

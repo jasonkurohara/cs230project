@@ -571,11 +571,34 @@ print(dataset)
 
 
 
+
+
+lookback = 5
+
 x2_train=dataset
 x2_train = x2_train[0:1689][:]
 
 
+temp = np.zeros((1689,lookback))
 
+
+for row in range(x2_train.shape[0]):
+ #   print(row)
+    if 1 <= row < lookback:
+        temp[row][0:row] = x2_train[0:row][0]
+
+    elif row >= lookback:
+        temp[row] = x2_train[(row-lookback):row][0]
+
+x2_train = temp
+
+# for row in range(headlines_dj.shape[0]):
+#     if 1 <= row <= 20:
+#         print(row)
+#         headlines_dj[row][200:200+row] = price[0:row]
+
+#     else:
+#         headlines_dj[row][200:] = price[row-21:row-1]
 print("shape of x2_train: " + str(x2_train.shape))
 print("shape of x_train: "+ str(x_train.shape))
 print("shape of y_train"+str(y_train.shape))

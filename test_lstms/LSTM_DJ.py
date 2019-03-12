@@ -91,6 +91,7 @@ print(type(dataset))
 
 
 import numpy
+
 # normalize the dataset
 scaler = MinMaxScaler(feature_range=(0, 1))
 dataset = scaler.fit_transform(dataset)
@@ -98,10 +99,16 @@ dataset = scaler.fit_transform(dataset)
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
 train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
+
+
+
 # reshape into X=t and Y=t+1
 look_back = 5
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
+
+print("MORE SHAPES: ")
+print(trainX.shape)
 # reshape input to be [samples, time steps, features]
 trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
 testX = numpy.reshape(testX, (testX.shape[0], 1, testX.shape[1]))

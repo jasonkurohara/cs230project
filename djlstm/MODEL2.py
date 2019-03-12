@@ -570,8 +570,33 @@ for row in dj.iterrows():
 print(dataset)
 
 
+# Normalize opening prices (target values)
+max_price = max(dataset[:][0])
+min_price = min(dataset[:][0])
+mean_price = np.mean(dataset[:][0])
+def normalize(price):
+    return ((price-min_price)/(max_price-min_price))
 
 
+# In[305]:
+
+#norm_price = []
+for row in range(dataset.shape[0]):
+    dataset[row][0] = normalize(dataset[row][0])
+
+
+# In[306]:
+
+# Check that normalization worked well
+# print(min(norm_price))
+# print(max(norm_price))
+# print(np.mean(norm_price))
+
+
+
+
+# scaler = MinMaxScaler(feature_range=(0, 1))
+# dataset = scaler.fit_transform(dataset)
 
 lookback = 5
 

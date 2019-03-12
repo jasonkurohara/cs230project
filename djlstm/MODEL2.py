@@ -518,7 +518,7 @@ print("SAVING ARRAYS")
 # max_daily_length=200
 """
 import dill                            
-filename = 'globalsave.pkl'
+filename = '../data/globalsave.pkl'
 #dill.dump_session(filename)  #Save session
 dill.load_session(filename) # load the session
 
@@ -698,15 +698,17 @@ def build_model(x2_shape,x2_train):
     ####
 
 
-    # model3=Sequential()
+    model3=Sequential()
 
+    model3.add(LSTM(4, input_shape=(1, lookback)))
     # model3.add(LSTM(1, batch_input_shape=(256, x2_train.shape[1], x2_train.shape[2]), stateful=True))
  
     model = Sequential()
 
     # CUT OUT MODEL3.OUTPUT AND THIS MODEL WILL COMPILE
-    model = Concatenate(axis=0)([model1.output, model2.output, tf.keras.backend.transpose(model3.output)])
+   # model = Concatenate(axis=0)([model1.output, model2.output, tf.keras.backend.transpose(model3.output)])
 
+    model = Concatenate()([model1.output, model2.output, model3.output],)
     model = Dense(hidden_dims, kernel_initializer=weights)(model)
     model = Dropout(dropout)(model)
     
@@ -726,6 +728,9 @@ def build_model(x2_shape,x2_train):
     print(model3.input)
 
 
+
+
+
     merged_model = Model(inputs=[model1.input, model2.input, model3.input], outputs=model)
     merged_model.compile(loss='mean_squared_error',
                   optimizer=Adam(lr=learning_rate,clipvalue=1.0))
@@ -737,16 +742,13 @@ def build_model(x2_shape,x2_train):
 
 
 
-
-
-
-
 # Use grid search to help find a better model
 for deeper in [False]:
     for wider in [True,False]:
         for learning_rate in [0.001]:
             for dropout in [0.3, 0.5]:
-              #  x2_train = x2_train.reshape(x2_train.shape[0],1,x2_train.shape[1])
+                x2_train = np.reshape(x2_train,(x2_train.shape[0],1,x2_train.shape[1]))
+               # trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
                 model = build_model(x2_train.shape,x2_train)
                 print()
                 print("Current model: Deeper={}, Wider={}, LR={}, Dropout={}".format(

@@ -631,7 +631,7 @@ print("shape of y_test"+str(y_test.shape))
 
 
 x2_train = np.reshape(x2_train,(x2_train.shape[0],1,x2_train.shape[1]))
-
+x2_test = np.reshape(x2_test,(x2_test.shape[0],1,x2_test.shape[1]))
 
 filter_length1 = 3
 filter_length2 = 5

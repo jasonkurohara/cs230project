@@ -604,10 +604,10 @@ def normalize(price):
 lookback = 5
 
 x2_train=dataset
-x2_train = x2_train[0:1689][:]
+x2_train = x2_train[0:1988][:]
 
 
-temp = np.zeros((1689,lookback))
+temp = np.zeros((1988,lookback))
 
 
 for row in range(x2_train.shape[0]):
@@ -618,21 +618,18 @@ for row in range(x2_train.shape[0]):
     elif row >= lookback:
         temp[row] = x2_train[(row-lookback):row][0]
 
+
 x2_train = temp
+x2_test = x2_train[1689:][:] 
+x2_train = x2_train[0:1689][:]
 
-# for row in range(headlines_dj.shape[0]):
-#     if 1 <= row <= 20:
-#         print(row)
-#         headlines_dj[row][200:200+row] = price[0:row]
 
-#     else:
-#         headlines_dj[row][200:] = price[row-21:row-1]
+print("shape of x2_test: " + str(x2_test.shape))
 print("shape of x2_train: " + str(x2_train.shape))
 print("shape of x_train: "+ str(x_train.shape))
 print("shape of y_train"+str(y_train.shape))
 print("shape of x_test"+str(x_test.shape))
 print("shape of y_test"+str(y_test.shape))
-
 
 
 x2_train = np.reshape(x2_train,(x2_train.shape[0],1,x2_train.shape[1]))
@@ -774,8 +771,6 @@ for deeper in [True,False]:
                                     callbacks = callbacks)
 
 
-# In[312]:
-
 # Make predictions with the best weights
 deeper=False
 wider=False
@@ -786,7 +781,7 @@ model = build_model()
 
 model.load_weights('./question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout))
-predictions = model.predict([x_test,x_test,x_test], verbose = True)
+predictions = model.predict([x_test,x_test,x2_test], verbose = True)
 
 
 # In[314]:

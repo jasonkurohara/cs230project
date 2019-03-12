@@ -612,7 +612,7 @@ for row in range(dataset.shape[0]):
         lookback_array[row][0:row] = dataset[0:row][0]
 
     elif row >= lookback:
-        lookback_array[row] = x2_train[(row-lookback):row][0]
+        lookback_array[row] = dataset[(row-lookback):row][0]
 
 
 #x2_train = temp
@@ -621,7 +621,8 @@ x2_train = lookback_array[0:1689][:]
 
 
 
-
+print(x2_test)
+print(x2_train)
 print("shape of x2_test: " + str(x2_test.shape))
 print("shape of x2_train: " + str(x2_train.shape))
 print("shape of x_train: "+ str(x_train.shape))

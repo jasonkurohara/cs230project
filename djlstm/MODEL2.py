@@ -745,7 +745,7 @@ def build_model():
 
 
 # Use grid search to help find a better model
-for deeper in [False]:
+for deeper in [True,False]:
     for wider in [True,False]:
         for learning_rate in [0.001]:
             for dropout in [0.3, 0.5]:

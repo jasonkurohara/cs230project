@@ -3,3 +3,4 @@ data/*
 separate_lstm/glove.840B.300d.txt
 separate_lstm/News.csv
 separate_lstm/DowJones.csv
+djlstm/globalsave.pkl

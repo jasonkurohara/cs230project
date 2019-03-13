@@ -30,11 +30,13 @@ from keras.layers import *
 from keras.layers import add
 import time
 import nltk
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import mean_squared_error
 nltk.download('stopwords')
 
 
-
 """
+
 dj = pd.read_csv("../data/DowJones.csv") #read in stock prices
 news = pd.read_csv("../data/News.csv") #read in news data
 dj.head()
@@ -82,41 +84,6 @@ for row in dj.iterrows():
     headlines.append(daily_headlines)
     if len(price) % 500 == 0:
         print(len(price))
-
-
-print("Length of prices: " + str(len(price))) # Compare lengths to ensure they are the same
-print("Length of headlines: " + str(len(headlines)))
-
-# Compare the number of headlines for each day
-print("Max number of headlines in a day: " + str(max(len(i) for i in headlines)))
-print("Max number of headlines in a day: " + str(min(len(i) for i in headlines)))
-
-
-
-
-
-# headlines_dj = np.zeros((1988,220))
-# temp = np.zeros((1988,200))
-# print("AAAAAAAAA")
-
-# temp = np.array(temp)
-# print(temp.shape)
-# print(type(temp))
-# #headlines_dj[0:1988][0:200]= temp[0:1988][0:200]
-# for row in range(headlines_dj.shape[0]):
-#     headlines_dj[row][0:200] = temp[row]
-
-# headlines_dj = np.zeros((1988,220))
-# #headlines_dj[:][0:200]= temp_input[:][:]
-
-# for row in range(headlines_dj.shape[0]):
-#     if 1 <= row <= 20:
-#         print(row)
-#         headlines_dj[row][200:200+row] = price[0:row]
-
-#     else:
-#         headlines_dj[row][200:] = price[row-21:row-1]
-
 
 
 # A list of contractions from http://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python
@@ -320,15 +287,10 @@ print("Total Number of Unique Words:", len(word_counts))
 print("Number of Words we will use:", len(vocab_to_int))
 print("Percent of Words we will use: {}%".format(usage_ratio))
 
-
-# In[297]:
-
 # Need to use 300 for embedding dimensions to match GloVe's vectors.
 embedding_dim = 300
 
 nb_words = len(vocab_to_int)
-#SAVE THIS SHIT^^^^^^
-
 
 # Create matrix with default values of zero
 word_embedding_matrix = np.zeros((nb_words, embedding_dim))
@@ -346,8 +308,6 @@ print(len(word_embedding_matrix))
 
 
 # Note: The embeddings will be updated as the model trains, so our new 'random' embeddings will be more accurate by the end of training. This is also why we want to only use words that appear at least 10 times. By having the model see the word numerous timesm it will be better able to understand what it means. 
-
-# In[326]:
 
 # Change the text from words to integers
 # If word is not in vocab, replace it with <UNK> (unknown)
@@ -376,9 +336,6 @@ print("Total number of words in headlines:", word_count)
 print("Total number of UNKs in headlines:", unk_count)
 print("Percent of words that are UNK: {}%".format(unk_percent))
 
-
-# In[300]:
-
 # Find the length of headlines
 lengths = []
 for date in int_headlines:
@@ -388,13 +345,7 @@ for date in int_headlines:
 # Create a dataframe so that the values can be inspected
 lengths = pd.DataFrame(lengths, columns=['counts'])
 
-
-# In[301]:
-
 lengths.describe()
-
-
-# In[303]:
 
 # Limit the length of a day's news to 200 words, and the length of any headline to 16 words.
 # These values are chosen to not have an excessively long training time and 
@@ -433,8 +384,9 @@ for date in int_headlines:
 max_price = max(price)
 min_price = min(price)
 mean_price = np.mean(price)
+std_price = np.std(price)
 def normalize(price):
-    return ((price-min_price)/(max_price-min_price))
+    return (price - mean_price)/std_price
 
 
 # In[305]:
@@ -443,83 +395,25 @@ norm_price = []
 for p in price:
     norm_price.append(normalize(p))
 
-
-# In[306]:
-
 # Check that normalization worked well
 print(min(norm_price))
 print(max(norm_price))
 print(np.mean(norm_price))
 
 
-####################################
-print("shape of headlines: "+ str(len(pad_headlines)))
-print("shape of price: " + str(len(price)))
-print("shape of headlines: "+ str(np.array(pad_headlines).shape))
-print("shape of price: " + str(np.array(price).shape))
-
-#temp_input = np.copy(np.array(pad_headlines))
-
-
-# headlines_dj = np.zeros((1988,220))
-# temp = np.copy(pad_headlines)
-# print("AAAAAAAAA")
-
-# temp = np.array(temp)
-# print(temp.shape)
-# print(type(temp))
-# #headlines_dj[:][0:200]= temp
-# for row in range(headlines_dj.shape[0]):
-#     headlines_dj[row][0:200]=temp[row]
-
-# for row in range(headlines_dj.shape[0]):
-#     if 1 <= row <= 20:
-#         print(row)
-#         headlines_dj[row][200:200+row] = price[0:row]
-
-#     else:
-#         headlines_dj[row][200:] = price[row-21:row-1]
-
-# x_train, x_test, y_train, y_test = train_test_split(headlines_dj, norm_price, test_size = 0.15, random_state = 2)
-
 x_train, x_test, y_train, y_test = train_test_split(pad_headlines, norm_price, test_size = 0.15, random_state = 2)
-
-
-        
 
 x_train = np.array(x_train)
 x_test = np.array(x_test)
 y_train = np.array(y_train)
 y_test = np.array(y_test)
 
-x2_train = np.zeros((x_train.shape[0],20))
-
-for row in range(x2_train.shape[0]):
-    if 1 <= row <= 20:
-        print(row)
-        x2_train[row][0:row] = price[0:row]
-
-    else:
-        x2_train[row] = price[row-21:row-1]
-
-# from tempfile import TemporaryFile
-# outfile = TemporaryFile()
 print("SAVING ARRAYS")
 
 
 
-#np.savez("data.npz",x_train=x_train,y_train=y_train,y_test=y_test,x_test=x_test,x2_train = x2_train,embedding_dim=embedding_dim,nb_words=nb_words,word_embedding_matrix=word_embedding_matrix)
-# npzfile=np.load("data.npz")
-# x_train = npzfile["x_train"]
-# x_test = npzfile["x_train"]
-# y_train = npzfile["x_train"]
-# y_test = npzfile["x_train"]
-# x2_train = npzfile["x2_train"]
-# embedding_dim = npzfile["embedding_dim"]
-# nb_words=npzfile["nb_words"]
-# word_embedding_matrix=npzfile["word_embedding_matrix"]
-# max_daily_length=200
 """
+
 import dill                            
 filename = '../data/globalsave.pkl'
 #dill.dump_session(filename)  #Save session
@@ -532,18 +426,6 @@ dj.isnull().sum()
 news.isnull().sum()
 news.head()
 
-print("Dow Jones Raw Data Shape: " + str(dj.shape))
-print("Raw News Data Shae: " + str(news.shape))
-
-# Compare the number of unique dates. We want matching values.
-print("Number of Unique Dates in DJ data set: " + str(len(set(dj.Date))))
-print("Number of Unique Dates in news headlines: " + str(len(set(news.Date))))
-
-# Remove the extra dates that are in news
-news = news[news.Date.isin(dj.Date)]
-
-print("Removed extra dates in DJ data set: " + str(len(set(dj.Date))))
-print("Removed extra dates in DJ data set: " + str(len(set(news.Date))))
 
 # Calculate the difference in opening prices between the following and current day.
 # The model will try to predict how much the Open value will change beased on the news.
@@ -573,56 +455,35 @@ for row in dj.iterrows():
 print(dataset)
 
 
-# Normalize opening prices (target values)
-max_price = max(dataset[:][0])
-min_price = min(dataset[:][0])
-mean_price = np.mean(dataset[:][0])
-def normalize(price):
-    return ((price-min_price)/(max_price-min_price))
-
-
-# In[305]:
-
-#norm_price = []
-# for row in range(dataset.shape[0]):
-#     dataset[row][0] = normalize(dataset[row][0])
-
-
-# # In[306]:
-
-# Check that normalization worked well
-# print(min(norm_price))
-# print(max(norm_price))
-# print(np.mean(norm_price))
-
-
-
-
-# scaler = MinMaxScaler(feature_range=(0, 1))
-# dataset = scaler.fit_transform(dataset)
-
+# Create lookback_array 
 lookback = 5
-
 lookback_array = np.zeros((dataset.shape[0],lookback))
-
-
 for row in range(dataset.shape[0]):
  #   print(row)
     if 1 <= row < lookback:
-        lookback_array[row][0:row] = dataset[0:row][0]
+        lookback_array[row][0:row] = dataset[0:row].T
 
     elif row >= lookback:
-        lookback_array[row] = dataset[(row-lookback):row][0]
+        lookback_array[row][0:] = dataset[(row-lookback):row].T
 
-
-#x2_train = temp
+# Split lookbback_array for x2_test and x2_train
 x2_test = lookback_array[1689:][:] 
 x2_train = lookback_array[0:1689][:]
 
+price = np.asarray(price)
+std_price = np.std(dataset,axis=0)
+print(mean_price)
+print(std_price)
 
+x2_test = (x2_test - mean_price)/std_price
+x2_train = (x2_train - mean_price)/std_price
 
 print(x2_test)
 print(x2_train)
+
+
+
+
 print("shape of x2_test: " + str(x2_test.shape))
 print("shape of x2_train: " + str(x2_train.shape))
 print("shape of x_train: "+ str(x_train.shape))
@@ -739,7 +600,6 @@ for deeper in [True,False]:
         for learning_rate in [0.001]:
             for dropout in [0.3, 0.5]:
                 
-               # trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
                 model = build_model()
                 print()
                 print("Current model: Deeper={}, Wider={}, LR={}, Dropout={}".format(
@@ -755,8 +615,8 @@ for deeper in [True,False]:
 
                 history = model.fit([x_train,x_train, x2_train],
                                     y_train,
-                                    batch_size=256,
-                                    epochs=100,
+                                    batch_size=512,
+                                    epochs=1,
                                     validation_split=0.15,
                                     verbose=True,
                                     shuffle=True,
@@ -773,14 +633,16 @@ model = build_model()
 
 model.load_weights('./question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout))
+
+
 predictions = model.predict([x_test,x_test,x2_test], verbose = True)
 
 
 # In[314]:
-
+print(predictions)
 def unnormalize(price):
     '''Revert values to their unnormalized amounts'''
-    price = price*(max_price-min_price)+min_price
+    price = (price * std_price)+mean_price
     return(price)
 
 
@@ -846,7 +708,7 @@ class TimeHistory(Callback):
         self.times.append(time.time() - self.epoch_time_start)
 
 time_callback = TimeHistory()
-#print ("Average epoch training time: {} seconds".format(np.mean(time_callback.times)))
+print ("Average epoch training time: {} seconds".format(np.mean(time_callback.times)))
 
 # Calculate errors
 mae = mae(unnorm_y_test, unnorm_predictions) #median absolute error
@@ -865,6 +727,7 @@ print("Predicted values matched the actual direction {}% of the time.".format(di
 #Display the graph
 plt.show()
 
+plt.savefig("newdata.png")
 
 # As we can see from the data above, this model struggles to accurately predict the change in the opening price of the Dow Jones Instrustial Average. Given that its median average error is 74.15 and the interquartile range of the actual price change is 142.16 (87.47 + 54.69), this model is about as good as someone who knows the average price change of the Dow. 
 # 
@@ -878,7 +741,7 @@ plt.show()
 
 # Below is the code necessary to make your own predictions. I found that the predictions are most accurate when there is no padding included in the input data. In the create_news variable, I have some default news that you can use, which is from April 30th, 2017. Just change the text to whatever you want, then see the impact your new headline will have.
 
-# In[117]:
+
 
 def news_to_int(news):
     '''Convert your created news into integers'''

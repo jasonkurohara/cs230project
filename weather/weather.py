@@ -34,6 +34,7 @@ import nltk
 nltk.download('stopwords')
 from datetime import datetime
 from keras import regularizers
+from PredictGenerator import model_show_predictions
 
 dj = pd.read_csv("../data/DowJones.csv") #read in stock prices
 weather = pd.read_csv("../data/nyc_weather.csv") #read in news data
@@ -79,6 +80,7 @@ dj = dj.dropna()
 weather = weather[weather.DATE.isin(dj.Date)]
 dj = dj[dj.Date.isin(weather.DATE)]
 
+'''
 print(weather.head())
 print(weather['DATE'])
 print(weather.columns)
@@ -89,6 +91,7 @@ print("Weather HEAD")
 print(weather.head())
 print('DJ HEAD')
 print(dj.head())
+'''
 
 weather = weather.drop(['DATE'], axis=1)
 
@@ -103,14 +106,16 @@ for row in dj.iterrows():
         print(len(price))
 
 
-print("Length of prices: " + str(len(price))) # Compare lengths to ensure they are the same
+# print("Length of prices: " + str(len(price))) # Compare lengths to ensure they are the same
 
 # Normalize opening prices (target values)
 max_price = max(price)
 min_price = min(price)
 mean_price = np.mean(price)
+mean_price = np.mean(price)
+std_price = np.std(price)
 def normalize(price):
-    return ((price-min_price)/(max_price-min_price))
+    return (price - mean_price)/std_price
 
 norm_price = []
 for p in price:
@@ -118,6 +123,7 @@ for p in price:
 
 
 # Check that normalization worked well
+'''
 print(min(norm_price))
 print(max(norm_price))
 print(np.mean(norm_price))
@@ -128,11 +134,13 @@ print(weather[weather.PRCP.isnull()])
 print('weather TMAX nulls: ')
 print(weather[weather.TMAX.isnull()])
 print('price has nulls: ' + str(pd.DataFrame(norm_price).isnull().any()))
-
+'''
 
 ####################################
 print("shape of price: " + str(len(price)))
 print("shape of price: " + str(np.array(price).shape))
+print('summary of price: ')
+print(pd.DataFrame(norm_price, columns=[""]).describe())
 
 x_train, x_dev, y_train, y_dev = train_test_split(weather, norm_price, test_size = 0.15, random_state = 2)
 x_train = np.array(x_train)
@@ -140,35 +148,19 @@ y_train = np.array(y_train)
 x_dev = np.array(x_dev)
 y_dev = np.array(y_dev)
 
+print('y_dev before training: \n' + str(y_dev[0:10]))
 
 
-filter_length1 = 3
-filter_length2 = 5
-dropout = 0.5
-learning_rate = 0.001
-weights = initializers.TruncatedNormal(mean=0.0, stddev=0.1, seed=2)
-nb_filter = 16
-rnn_output_size = 128
-hidden_dims = 128
-wider = True
-deeper = True
 # weather = np.transpose(weather)
 input_shape = x_train.shape
 print('input_shape: ' + str(input_shape))
 n_cols = input_shape[1]
 
-if wider == True:
-    nb_filter *= 2
-    rnn_output_size *= 2
-    hidden_dims *= 2
-
-
 def build_model():
     model = Sequential()
     model.add(Dense(1, activation='relu', input_shape=(n_cols,), 
         kernel_regularizer=regularizers.l2(0.01), 
-        activity_regularizer=regularizers.l1(0.01), 
-        kernel_initializer=weights))
+        activity_regularizer=regularizers.l1(0.01)))
     return model
 
 
@@ -184,9 +176,9 @@ for deeper in [False]:
                 print()
                 save_best_weights = 'question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout)
-                callbacks = [ModelCheckpoint(save_best_weights, monitor='loss', save_best_only=True, verbose=1),
-                             EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='auto'),
-                             ReduceLROnPlateau(monitor='val_loss', factor=0.2, verbose=1, patience=3)]
+                callbacks = [ModelCheckpoint(save_best_weights, monitor='loss', save_best_only=True, verbose=False),
+                             EarlyStopping(monitor='loss', patience=5, verbose=False, mode='auto'),
+                             ReduceLROnPlateau(monitor='loss', factor=0.2, verbose=False, patience=3)]
                 print('model: ' + str(model))
                 opt = Adam()
                 model.compile(optimizer=opt, loss='mse', metrics = ['mean_squared_error'])
@@ -196,80 +188,82 @@ for deeper in [False]:
                                     batch_size=64,
                                     verbose=0,
                                     callbacks = callbacks)
+                predictions = model.predict([x_dev], verbose = False)
+                print('raw predictions \n' + str(predictions[0:10]))
+                model_show_predictions(predictions, y_dev, deeper, wider, dropout, learning_rate,
+                    std_price=std_price, mean_price=mean_price)
 
 
-# In[312]:
-
+'''
 # Make predictions with the best weights
 deeper=False
 wider=False
 dropout=0.5
-learning_Rate = 0.005
+learning_Rate = 0.0001
 # Need to rebuild model in case it is different from the model that was trained most recently.
 model = build_model()
 
 model.load_weights('./question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(deeper,wider,learning_rate,dropout))
 predictions = model.predict([x_dev], verbose = True)
 
+'''
 
-# In[314]:
-
-def unnormalize(price):
-    '''Revert values to their unnormalized amounts'''
-    price = price*(max_price-min_price)+min_price
-    return(price)
+# def unnormalize(price):
+#     '''Revert values to their unnormalized amounts'''
+#     price = price*(max_price-min_price)+min_price
+#     return(price)
 
 
-# In[345]:
+# # In[345]:
 
-unnorm_predictions = []
-for pred in predictions:
-    unnorm_predictions.append(unnormalize(pred))
+# unnorm_predictions = []
+# for pred in predictions:
+#     unnorm_predictions.append(unnormalize(pred))
     
-unnorm_y_test = []
-for y in y_dev:
-    unnorm_y_test.append(unnormalize(y))
+# unnorm_y_test = []
+# for y in y_dev:
+#     unnorm_y_test.append(unnormalize(y))
 
 
 
-# In[362]:
+# # In[362]:
 
-print("Summary of actual opening price changes")
-print(pd.DataFrame(unnorm_y_test, columns=[""]).describe())
-print()
-print("Summary of predicted opening price changes")
-print(pd.DataFrame(unnorm_predictions, columns=[""]).describe())
-
-
-# In[365]:
-
-# Plot the predicted (blue) and actual (green) values
-plt.figure(figsize=(12,4))
-plt.plot(unnorm_predictions)
-plt.plot(unnorm_y_test)
-plt.title("Predicted (blue) vs Actual (green) Opening Price Changes")
-plt.xlabel("Testing instances")
-plt.ylabel("Change in Opening Price")
+# print("Summary of actual opening price changes")
+# print(pd.DataFrame(unnorm_y_test, columns=[""]).describe())
+# print()
+# print("Summary of predicted opening price changes")
+# print(pd.DataFrame(unnorm_predictions, columns=[""]).describe())
 
 
-# In[318]:
+# # In[365]:
 
-# Create lists to measure if opening price increased or decreased
-direction_pred = []
-for pred in unnorm_predictions:
-    if pred >= 0:
-        direction_pred.append(1)
-    else:
-        direction_pred.append(0)
-direction_test = []
-for value in unnorm_y_test:
-    if value >= 0:
-        direction_test.append(1)
-    else:
-        direction_test.append(0)
+# # Plot the predicted (blue) and actual (green) values
+# plt.figure(figsize=(12,4))
+# plt.plot(unnorm_predictions)
+# plt.plot(unnorm_y_test)
+# plt.title("Predicted (blue) vs Actual (green) Opening Price Changes")
+# plt.xlabel("Testing instances")
+# plt.ylabel("Change in Opening Price")
 
 
-#Total Training time
+# # In[318]:
+
+# # Create lists to measure if opening price increased or decreased
+# direction_pred = []
+# for pred in unnorm_predictions:
+#     if pred >= 0:
+#         direction_pred.append(1)
+#     else:
+#         direction_pred.append(0)
+# direction_test = []
+# for value in unnorm_y_test:
+#     if value >= 0:
+#         direction_test.append(1)
+#     else:
+#         direction_test.append(0)
+
+
+# #Total Training time
 
 class TimeHistory(Callback):
     def on_train_begin(self, logs={}):
@@ -284,19 +278,19 @@ class TimeHistory(Callback):
 time_callback = TimeHistory()
 #print ("Average epoch training time: {} seconds".format(np.mean(time_callback.times)))
 
-# Calculate errors
-mae = mae(unnorm_y_test, unnorm_predictions) #median absolute error
-rmse = np.sqrt(mse(y_dev, predictions)) # root mean squared error
-r2 = r2(unnorm_y_test, unnorm_predictions) #R squared error
+# # Calculate errors
+# mae = mae(unnorm_y_test, unnorm_predictions) #median absolute error
+# rmse = np.sqrt(mse(y_dev, predictions)) # root mean squared error
+# r2 = r2(unnorm_y_test, unnorm_predictions) #R squared error
 
-print("Median absolute error: {}".format(mae))
-print("Root mean suqared error: {}".format(rmse))
-print("R squared error: {}".format(r2))
+# print("Median absolute error: {}".format(mae))
+# print("Root mean suqared error: {}".format(rmse))
+# print("R squared error: {}".format(r2))
 
-# Calculate if the predicted direction matched the actual direction
-direction = acc(direction_test, direction_pred)
-direction = round(direction,4)*100
-print("Predicted values matched the actual direction {}% of the time.".format(direction))
+# # Calculate if the predicted direction matched the actual direction
+# direction = acc(direction_test, direction_pred)
+# direction = round(direction,4)*100
+# print("Predicted values matched the actual direction {}% of the time.".format(direction))
 
-#Display the graph
-plt.show()
+# #Display the graph
+# plt.show()

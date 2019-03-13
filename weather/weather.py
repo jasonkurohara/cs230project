@@ -1,6 +1,8 @@
 
 # coding: utf-8
 
+# CHECK
+
 # # Predicting the Dow Jones with News
 # The goal of this project is to use the top, daily news headlines from Reddit to predict the movement of the Dow Jones Industrial Average. The data for this project spans from 2008-08-08 to 2016-07-01, and is from this [Kaggle dataset](https://www.kaggle.com/aaron7sun/stocknews). 
 # The news from a given day will be used to predict the difference in opening price between that day, and the following day. This method is chosen because it should allow all of the day's news to be incorporated into the price compared to closing price, which could only incorporate the day's morning and afternoon news.
@@ -172,9 +174,9 @@ def build_model():
 
 # Use grid search to help find a better model
 for deeper in [False]:
-    for wider in [True,False]:
-        for learning_rate in [0.001]:
-            for dropout in [0.3, 0.5]:
+    for wider in [False]:
+        for learning_rate in [0.001, 0.005, 0.0001]:
+            for dropout in [0.5]:
                 model = build_model()
                 print()
                 print("Current model: Deeper={}, Wider={}, LR={}, Dropout={}".format(
@@ -182,7 +184,7 @@ for deeper in [False]:
                 print()
                 save_best_weights = 'question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout)
-                callbacks = [ModelCheckpoint(save_best_weights, monitor='loss', save_best_only=False),
+                callbacks = [ModelCheckpoint(save_best_weights, monitor='loss', save_best_only=True, verbose=1),
                              EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='auto'),
                              ReduceLROnPlateau(monitor='val_loss', factor=0.2, verbose=1, patience=3)]
                 print('model: ' + str(model))
@@ -192,6 +194,7 @@ for deeper in [False]:
                                     y_train,
                                     epochs=100,
                                     batch_size=64,
+                                    verbose=0,
                                     callbacks = callbacks)
 
 
@@ -200,8 +203,8 @@ for deeper in [False]:
 # Make predictions with the best weights
 deeper=False
 wider=False
-dropout=0.3
-learning_Rate = 0.001
+dropout=0.5
+learning_Rate = 0.005
 # Need to rebuild model in case it is different from the model that was trained most recently.
 model = build_model()
 

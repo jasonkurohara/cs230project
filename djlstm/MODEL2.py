@@ -595,8 +595,8 @@ def build_model():
 
 
 # Use grid search to help find a better model
-for deeper in [True,False]:
-    for wider in [True,False]:
+for deeper in [True, False]:
+    for wider in [True, False]:
         for learning_rate in [0.001]:
             for dropout in [0.3, 0.5]:
                 
@@ -608,7 +608,7 @@ for deeper in [True,False]:
                 save_best_weights = 'question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout)
 
-                callbacks = [ModelCheckpoint(save_best_weights, monitor='val_loss', save_best_only=True),
+                callbacks = [ModelCheckpoint(save_best_weights, monitor='val_loss', save_best_only=False),
                              EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='auto'),
                              ReduceLROnPlateau(monitor='val_loss', factor=0.2, verbose=1, patience=3)]
                 print('model: ' + str(model))
@@ -633,6 +633,7 @@ model = build_model()
 
 model.load_weights('./question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout))
+#model.load_weights('./question_pairs_weights_deeper=True_wider=True_lr=0.001_dropout=0.3.h5')
 
 
 predictions = model.predict([x_test,x_test,x2_test], verbose = True)
@@ -707,8 +708,8 @@ class TimeHistory(Callback):
     def on_epoch_end(self, epoch, logs={}):
         self.times.append(time.time() - self.epoch_time_start)
 
-time_callback = TimeHistory()
-print ("Average epoch training time: {} seconds".format(np.mean(time_callback.times)))
+# time_callback = TimeHistory()
+# print ("Average epoch training time: {} seconds".format(np.mean(time_callback.times)))
 
 # Calculate errors
 mae = mae(unnorm_y_test, unnorm_predictions) #median absolute error
@@ -725,7 +726,7 @@ direction = round(direction,4)*100
 print("Predicted values matched the actual direction {}% of the time.".format(direction))
 
 #Display the graph
-plt.show()
+#plt.show()
 
 plt.savefig("newdata.png")
 

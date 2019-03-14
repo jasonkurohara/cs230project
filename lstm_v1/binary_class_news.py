@@ -35,13 +35,14 @@ from keras.layers import *
 from keras.layers import add
 import time
 import nltk
+from PredictGenerator import model_show_predictions
 nltk.download('stopwords')
 # In[268]:
 
 dj = pd.read_csv("DowJones.csv")
 news = pd.read_csv("News.csv")
 
-
+"""
 # ## Inspect the data
 
 # In[269]:
@@ -487,24 +488,27 @@ def normalize(price):
 
 # In[305]:
 
-norm_price = []
+dir_price = []
 for p in price:
-    norm_price.append(normalize(p))
+    if p > 0:
+        dir_price.append(1)
+    else:
+        dir_price.append(0)
 
 
 # In[306]:
 
 # Check that normalization worked well
-print(min(norm_price))
-print(max(norm_price))
-print(np.mean(norm_price))
+# print(min(norm_price))
+# print(max(norm_price))
+# print(np.mean(norm_price))
 
 
 # In[307]:
 
 # Split data into training and testing sets.
 # Validating data will be created during training.
-x_train, x_test, y_train, y_test = train_test_split(pad_headlines, norm_price, test_size = 0.15, random_state = 2)
+x_train, x_test, y_train, y_test = train_test_split(pad_headlines, dir_price, test_size = 0.15, random_state = 2)
 
 x_train = np.array(x_train)
 x_test = np.array(x_test)
@@ -517,6 +521,15 @@ y_test = np.array(y_test)
 # Check the lengths
 print(len(x_train))
 print(len(x_test))
+
+
+"""
+
+import dill                            
+filename = '../data/bin_class_save.pkl'
+#dill.dump_session(filename)  #Save session
+"LOADING PKL SESSION"
+dill.load_session(filename) # load the session
 
 
 # In[310]:
@@ -624,10 +637,11 @@ def build_model():
         model = Dropout(dropout)(model)
 
     model = Dense(1, 
-                    kernel_initializer = weights,
+                    kernel_initializer = weights,activation = "sigmoid",
                     name='output')(model)
+    
     merged_model = Model([model1.input, model2.input],model)
-    merged_model.compile(loss='mean_squared_error',
+    merged_model.compile(loss='binary_crossentropy',
                   optimizer=Adam(lr=learning_rate,clipvalue=1.0))
     return merged_model
 
@@ -636,9 +650,9 @@ def build_model():
 
 # Use grid search to help find a better model
 for deeper in [False]:
-    for wider in [True,False]:
+    for wider in [False]:
         for learning_rate in [0.001]:
-            for dropout in [0.3, 0.5]:
+            for dropout in [0.5]:
                 model = build_model()
                 print()
                 print("Current model: Deeper={}, Wider={}, LR={}, Dropout={}".format(
@@ -653,16 +667,18 @@ for deeper in [False]:
 
                 history = model.fit([x_train,x_train],
                                     y_train,
-                                    batch_size=256,
-                                    epochs=100,
+                                    batch_size=512,
+                                    epochs=1,
                                     validation_split=0.15,
                                     verbose=True,
                                     shuffle=True,
                                     callbacks = callbacks)
-
+                predictions = model.predict([x_test, x_test])
+                model_show_predictions(predictions, y_test, deeper, wider, dropout, 
+                    learning_rate, max_price=max_price, min_price=min_price)
 
 # In[312]:
-
+"""
 # Make predictions with the best weights
 deeper=False
 wider=False
@@ -688,11 +704,11 @@ def unnormalize(price):
 
 unnorm_predictions = []
 for pred in predictions:
-    unnorm_predictions.append(unnormalize(pred))
+    unnorm_predictions.append((pred))
     
 unnorm_y_test = []
 for y in y_test:
-    unnorm_y_test.append(unnormalize(y))
+    unnorm_y_test.append((y))
 
 
 
@@ -723,13 +739,13 @@ plt.savefig("PredictedvActual.png")
 # Create lists to measure if opening price increased or decreased
 direction_pred = []
 for pred in unnorm_predictions:
-    if pred >= 0:
+    if pred >= 0.5:
         direction_pred.append(1)
     else:
         direction_pred.append(0)
 direction_test = []
 for value in unnorm_y_test:
-    if value >= 0:
+    if value >= 0.5:
         direction_test.append(1)
     else:
         direction_test.append(0)
@@ -804,24 +820,7 @@ def padding_news(news):
     elif len(padded_news) > max_daily_length:
         padded_news = padded_news[:max_daily_length]
     return padded_news
-
+"""
 
 # In[368]:
-
-# Default news that you can use
-create_news = "Leaked document reveals Facebook conducted research to target emotionally vulnerable and insecure youth.                Woman says note from Chinese 'prisoner' was hidden in new purse.                21,000 AT&T workers poised for Monday strike                housands march against Trump climate policies in D.C., across USA                Kentucky judge won't hear gay adoptions because it's not in the child's \"best interest\"                Multiple victims shot in UTC area apartment complex                Drones Lead Police to Illegal Dumping in Riverside County | NBC Southern California                An 86-year-old Californian woman has died trying to fight a man who was allegedly sexually assaulting her 61-year-old friend.                Fyre Festival Named in $5Million+ Lawsuit after Stranding Festival-Goers on Island with Little Food, No Security.                The \"Greatest Show on Earth\" folds its tent for good                U.S.-led fight on ISIS have killed 352 civilians: Pentagon                Woman offers undercover officer sex for $25 and some Chicken McNuggets                Ohio bridge refuses to fall down after three implosion attempts                Jersey Shore MIT grad dies in prank falling from library dome                New York graffiti artists claim McDonald's stole work for latest burger campaign                SpaceX to launch secretive satellite for U.S. intelligence agency                Severe Storms Leave a Trail of Death and Destruction Through the U.S.                Hamas thanks N. Korea for its support against ‘Israeli occupation’                Baker Police officer arrested for allegedly covering up details in shots fired investigation                Miami doctor’s call to broker during baby’s delivery leads to $33.8 million judgment                Minnesota man gets 15 years for shooting 5 Black Lives Matter protesters                South Australian woman facing possible 25 years in Colombian prison for drug trafficking                The Latest: Deal reached on funding government through Sept.                Russia flaunts Arctic expansion with new military bases"
-
-clean_news = clean_text(create_news)
-
-int_news = news_to_int(clean_news)
-
-pad_news = padding_news(int_news)
-
-pad_news = np.array(pad_news).reshape((1,-1))
-
-pred = model.predict([pad_news,pad_news])
-
-price_change = unnormalize(pred)
-
-print("The Dow should open: {} from the previous open.".format(np.round(price_change[0][0],2)))
 

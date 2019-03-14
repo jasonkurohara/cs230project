@@ -36,6 +36,7 @@ nltk.download('stopwords')
 from PredictGenerator import model_show_predictions
 
 
+
 """
 
 dj = pd.read_csv("../data/DowJones.csv") #read in stock prices
@@ -471,17 +472,25 @@ for row in range(dataset.shape[0]):
 x2_test = lookback_array[1689:][:] 
 x2_train = lookback_array[0:1689][:]
 
-price = np.asarray(price)
+
 std_price = np.std(dataset,axis=0)
+print("Mean Price")
 print(mean_price)
+print("STD Price")
 print(std_price)
 
+
+
+y_train = np.zeros(x2_train.shape[0])
+y_test = np.zeros(x2_test.shape[0])
+y_train = dataset[0:1689]
+y_test = dataset[1689:]
+
+#Normalization
 x2_test = (x2_test - mean_price)/std_price
 x2_train = (x2_train - mean_price)/std_price
-
-print(x2_test)
-print(x2_train)
-
+y_test = (y_test - mean_price)/std_price
+y_train = (y_train - mean_price)/std_price
 
 
 
@@ -491,6 +500,9 @@ print("shape of x_train: "+ str(x_train.shape))
 print("shape of y_train"+str(y_train.shape))
 print("shape of x_test"+str(x_test.shape))
 print("shape of y_test"+str(y_test.shape))
+print("contents of y_tetst: "+ str(y_test))
+print("contents of y_tetst: "+ str(y_train))
+
 
 
 x2_train = np.reshape(x2_train,(x2_train.shape[0],1,x2_train.shape[1]))
@@ -606,7 +618,7 @@ for deeper in [True, False]:
                 print("Current model: Deeper={}, Wider={}, LR={}, Dropout={}".format(
                     deeper,wider,learning_rate,dropout))
                 print()
-                save_best_weights = 'question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
+                save_best_weights = '../results/    question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout)
 
                 callbacks = [ModelCheckpoint(save_best_weights, monitor='val_loss', save_best_only=True),
@@ -616,8 +628,8 @@ for deeper in [True, False]:
 
                 history = model.fit([x_train,x_train, x2_train],
                                     y_train,
-                                    batch_size=512,
-                                    epochs=1,
+                                    batch_size=256,
+                                    epochs=100,
                                     validation_split=0.15,
                                     verbose=False,
                                     shuffle=True,

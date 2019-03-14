@@ -7,6 +7,7 @@ from sklearn.metrics import median_absolute_error as mae
 from sklearn.metrics import mean_squared_error as mse
 from sklearn.metrics import r2_score as r2
 from sklearn.metrics import accuracy_score as acc
+import math
 
 '''
 This module includes functions related to making and evaluat-
@@ -26,13 +27,23 @@ def model_show_predictions(predictions, y, deeper, wider, dropout, learning_rate
 
     unnorm_predictions = []
     for pred in predictions:
+        if math.isnan(unnormalize(pred, std_price,mean_price)):
+            print("NAN FOUND")
+            exit()
         unnorm_predictions.append(unnormalize(pred, std_price, 
             mean_price))
 
     unnorm_y = []
     for y_pt in y:
+        if math.isnan(unnormalize(y_pt, std_price,mean_price)):
+            print("NAN FOUND")
+            exit()
         unnorm_y.append(unnormalize(y_pt, std_price,
             mean_price))
+
+
+
+
 
 
     print("Summary of actual opening price changes")
@@ -83,7 +94,7 @@ def model_show_predictions(predictions, y, deeper, wider, dropout, learning_rate
     print('y head: \n' + str(y[0:10]))
     print('predictions head \n' + str(predictions[0:10]))
 
-    plt.show()
+   # plt.show()
 
-    plt.savefig('RESULTS_deeper={}_wider={}_dropout={}_lr={}.png'.
+    plt.savefig('../results/RESULTS_deeper={}_wider={}_dropout={}_lr={}.png'.
         format(deeper, wider, dropout, learning_rate))

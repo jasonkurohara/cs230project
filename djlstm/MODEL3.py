@@ -34,8 +34,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 nltk.download('stopwords')
 from PredictGenerator import model_show_predictions
-
-
+import plotter
 
 """
 
@@ -618,7 +617,7 @@ for deeper in [True, False]:
                 print("Current model: Deeper={}, Wider={}, LR={}, Dropout={}".format(
                     deeper,wider,learning_rate,dropout))
                 print()
-                save_best_weights = '../results/    question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
+                save_best_weights = '../results/question_pairs_weights_deeper={}_wider={}_lr={}_dropout={}.h5'.format(
                     deeper,wider,learning_rate,dropout)
 
                 callbacks = [ModelCheckpoint(save_best_weights, monitor='val_loss', save_best_only=True),
@@ -637,6 +636,7 @@ for deeper in [True, False]:
                 predictions = model.predict([x_test, x_test, x2_test])
                 model_show_predictions(predictions, y_test, deeper, wider, dropout, 
                     learning_rate, std_price=std_price, mean_price=mean_price)
+            #    plotter.display_all_plots(history,deeper,wider,dropout,learning_rate)
 
 
 '''

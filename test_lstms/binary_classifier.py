@@ -79,8 +79,11 @@ x = int(x)
 for row in dj.iterrows():
 	daily_headlines = []
 	number = (row[1]['Open'])
-	dataset[x]= number
-	#dataset[x][1]= int(x)
+	# if number < 0:
+	# 	dataset[x]= 0
+	# else:
+	# 	dataset[x] = 1
+	dataset[x][0]= number
 	x=int(x)+1
     
 print(dataset)
@@ -93,8 +96,8 @@ print(type(dataset))
 import numpy
 
 # normalize the dataset
-scaler = MinMaxScaler(feature_range=(0, 1))
-dataset = scaler.fit_transform(dataset)
+#scaler = MinMaxScaler(feature_range=(0, 1))
+#dataset = scaler.fit_transform(dataset)
 # split into train and test sets
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
@@ -105,17 +108,33 @@ train, test = dataset[0:train_size,:], dataset[train_size:len(dataset),:]
 # reshape into X=t and Y=t+1
 look_back = 5
 trainX, trainY = create_dataset(train, look_back)
+for row in range(trainY.shape[0]):
+	if trainY[row] < 0:
+
+		trainY[row]=0
+	else:
+		trainY[row]=1
+
+
 testX, testY = create_dataset(test, look_back)
+for row in range(testY.shape[0]):
+	if testY[row] < 0:
+		testY[row]=0
+	else:
+
+		testY[row]=1
 
 print("MORE SHAPES: ")
 print(trainX.shape)
+print(testY)
+print(trainY)
 # reshape input to be [samples, time steps, features]
 trainX = numpy.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
 testX = numpy.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
 # create and fit the LSTM network
 dropout=0.5
 model = Sequential()
-model.add(LSTM(4, input_shape=(1, look_back)))
+model.add(LSTM(10, input_shape=(1, look_back)))
 
 
 # model.add(Dense(8))
@@ -123,10 +142,12 @@ model.add(LSTM(4, input_shape=(1, look_back)))
 # model.add(Activation('relu'))
 # model.add(Dense(2))
 
-
+model.add(Dense(10,activation='relu'))
+model.add(Dense(5,activation='relu'))
 model.add(Dense(1))
-model.compile(loss='mean_squared_error', optimizer='adam')
-history = model.fit(trainX, trainY, epochs=10, batch_size=1, verbose=2)
+model.add(Activation('sigmoid'))
+model.compile(loss='binary_crossentropy', optimizer='adam')
+history = model.fit(trainX, trainY, epochs=100, batch_size=1, verbose=2)
 
 
 
@@ -138,47 +159,48 @@ testPredict = model.predict(testX)
 print("SHAPES")
 print(trainPredict.shape)
 print(testPredict.shape)
-
+print(testY.shape)
 
 # invert predictions
-trainPredict = scaler.inverse_transform(trainPredict)
-trainY = scaler.inverse_transform([trainY])
-testPredict = scaler.inverse_transform(testPredict)
-testY = scaler.inverse_transform([testY])
+# trainPredict = scaler.inverse_transform(trainPredict)
+# trainY = scaler.inverse_transform([trainY])
+# testPredict = scaler.inverse_transform(testPredict)
+# testY = scaler.inverse_transform([testY])
 # calculate root mean squared error
-trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
-print('Train Score: %.2f RMSE' % (trainScore))
-testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
-print('Test Score: %.2f RMSE' % (testScore))
-# shift train predictions for plotting
-trainPredictPlot = numpy.empty_like(dataset)
-trainPredictPlot[:, :] = numpy.nan
-trainPredictPlot[look_back:len(trainPredict)+look_back, :] = trainPredict
-# shift test predictions for plotting
-testPredictPlot = numpy.empty_like(dataset)
-testPredictPlot[:, :] = numpy.nan
-testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
-# plot baseline and predictions
-plt.plot(scaler.inverse_transform(dataset))
-plt.plot(trainPredictPlot)
-plt.plot(testPredictPlot)
+# trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:,0]))
+# print('Train Score: %.2f RMSE' % (trainScore))
+# testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:,0]))
+# print('Test Score: %.2f RMSE' % (testScore))
+# # shift train predictions for plotting
+# trainPredictPlot = numpy.empty_like(dataset)
+# trainPredictPlot[:, :] = numpy.nan
+# trainPredictPlot[look_back:len(trainPredict)+look_back, :] = trainPredict
+# # shift test predictions for plotting
+# testPredictPlot = numpy.empty_like(dataset)
+# testPredictPlot[:, :] = numpy.nan
+# testPredictPlot[len(trainPredict)+(look_back*2)+1:len(dataset)-1, :] = testPredict
+# # plot baseline and predictions
+# plt.plot(scaler.inverse_transform(dataset))
+# plt.plot(trainPredictPlot)
+# plt.plot(testPredictPlot)
 
-print(testY.shape)
-print(testPredict.shape)
+# print(testY.shape)
+# print(testPredict.shape)
 
+print(testPredict)
+print(testY)
 direction_pred = []
 for pred in testPredict:
-    if pred >= 0:
+    if pred >= 0.5:
         direction_pred.append(1)
     else:
         direction_pred.append(0)
 direction_test = []
-for value in testY[0]:
+for value in testY:
     if value >= 0:
         direction_test.append(1)
     else:
         direction_test.append(0)
-
 
 
 
@@ -192,17 +214,16 @@ print("Predicted values matched the actual direction {}% of the time.".format(di
 
 
 
-#plt.show()]
-plt.savefig('LSTM_PLOT_YEET.png')
+# #plt.show()]
+# plt.savefig('LSTM_PLOT_YEET.png')
 
-print(history.history.keys())
-plt.plot(history.history['loss'])
+# print(history.history.keys())
+# plt.plot(history.history['loss'])
 
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
-plt.legend(['train', 'test'], loc='upper left')
-plt.show()
-plt.savefig('../results/oooyea2.png')
-
+# plt.title('model loss')
+# plt.ylabel('loss')
+# plt.xlabel('epoch')
+# plt.legend(['train', 'test'], loc='upper left')
+# plt.show()
+# plt.savefig('../results/oooyea2.png')
 

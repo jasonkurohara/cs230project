@@ -126,7 +126,7 @@ model.add(LSTM(4, input_shape=(1, look_back)))
 
 model.add(Dense(1))
 model.compile(loss='mean_squared_error', optimizer='adam')
-model.fit(trainX, trainY, epochs=10, batch_size=1, verbose=2)
+history = model.fit(trainX, trainY, epochs=10, batch_size=1, verbose=2)
 
 
 
@@ -191,5 +191,17 @@ print("Predicted values matched the actual direction {}% of the time.".format(di
 
 
 
-#plt.show()
+#plt.show()]
 plt.savefig('LSTM_PLOT_YEET.png')
+
+print(history.history.keys())
+plt.plot(history.history['loss'])
+
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train', 'test'], loc='upper left')
+plt.show()
+plt.savefig('../results/oooyea2.png')
+
+

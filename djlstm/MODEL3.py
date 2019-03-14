@@ -512,6 +512,7 @@ filter_length2 = 5
 dropout = 0.5
 learning_rate = 0.001
 weights = initializers.TruncatedNormal(mean=0.0, stddev=0.1, seed=2)
+other_weights = initializers.glorot_normal(seed = 5)
 nb_filter = 16
 rnn_output_size = 128
 hidden_dims = 128
@@ -583,20 +584,20 @@ def build_model():
     
 
     djlstm=Sequential()
-    djlstm.add(LSTM(4, input_shape=(1, lookback), kernel_initializer = weights,activation='relu'))
+    djlstm.add(LSTM(4, input_shape=(1, lookback), kernel_initializer = other_weights,activation='relu'))
 
     full_conn = Sequential()
  
     full_conn = Add()([cnn1.output,cnn2.output])
     full_conn = Concatenate()([full_conn, djlstm.output])
-    full_conn = Dense(hidden_dims, kernel_initializer=weights)(full_conn)
+    full_conn = Dense(hidden_dims, kernel_initializer=other_weights)(full_conn)
     full_conn = Dropout(dropout)(full_conn)
     
     if deeper == True:
         full_conn = Dense(hidden_dims//2, kernel_initializer=weights)(full_conn)
         full_conn = Dropout(dropout)(full_conn)
 
-    full_conn = Dense(1,kernel_initializer = weights, name='output')(full_conn)
+    full_conn = Dense(1,kernel_initializer = other_weights, name='output')(full_conn)
 
     complete_model = Model(inputs=[cnn1.input, cnn2.input, djlstm.input], outputs=full_conn)
     complete_model.compile(loss='mean_squared_error',
@@ -621,8 +622,8 @@ for deeper in [True, False]:
                     deeper,wider,learning_rate,dropout)
 
                 callbacks = [ModelCheckpoint(save_best_weights, monitor='val_loss', save_best_only=True),
-                             EarlyStopping(monitor='val_loss', patience=5, verbose=0, mode='auto'),
-                             ReduceLROnPlateau(monitor='val_loss', factor=0.2, verbose=0, patience=3)]
+                             EarlyStopping(monitor='val_loss', patience=5, verbose=1, mode='auto'),
+                             ReduceLROnPlateau(monitor='val_loss', factor=0.2, verbose=1, patience=3)]
                 print('model: ' + str(model))
 
                 history = model.fit([x_train,x_train, x2_train],
@@ -630,12 +631,15 @@ for deeper in [True, False]:
                                     batch_size=256,
                                     epochs=100,
                                     validation_split=0.15,
-                                    verbose=False,
+                                    verbose=True,
                                     shuffle=True,
                                     callbacks = callbacks)
                 predictions = model.predict([x_test, x_test, x2_test])
                 model_show_predictions(predictions, y_test, deeper, wider, dropout, 
                     learning_rate, std_price=std_price, mean_price=mean_price)
+
+
+         
             #    plotter.display_all_plots(history,deeper,wider,dropout,learning_rate)
 
 

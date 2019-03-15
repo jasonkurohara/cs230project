@@ -625,9 +625,10 @@ for count in range(max_count):
     deeper = bool(randint(0,1))
     wider = bool(randint(0,1))
     dropout = round(np.random.uniform(0.3,0.5),2)
-    lr_p = -1 * np.random.rand() -3
+    
+    lr_p = -1 * np.random.rand() -3 #Learning rate is on logarithmic scale
     lr = 10 ** lr_p
-    lr = round(lr,5)
+    lr = round(lr,10)
 
     model = build_model()
     print()
@@ -643,8 +644,8 @@ for count in range(max_count):
 
     history = model.fit([x_train,x_train, x2_train],
                                     y_train,
-                                    batch_size=256,
-                                    epochs=100,
+                                    batch_size=512,
+                                    epochs=1,
                                     validation_split=0.15,
                                     verbose=True,
                                     shuffle=True,

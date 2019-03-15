@@ -672,7 +672,11 @@ for count in range(max_count):
 # Make predictions with the best weights
 plotter.display_all_model_plots(histories, folder_name="metrics")
 
-# Need to rebuild model in case it is different from the model that was trained most recently.
+# Need to rebuild model in case it is different from the model that was trained most recently.  
+deeper = best_deep
+ wider = best_wide
+lr = best_lr
+dropout = best_dropout
 model = build_model()
 
 model.load_weights('../weights/deeper={}_wider={}_lr={}_dropout={}.h5'.format(

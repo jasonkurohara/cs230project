@@ -10,3 +10,6 @@ New normalization, performs best at 58%, uses glorot initialization
 
 MODEL4.py
 Uses random search instead of grid search for hyper paramater tuning.
+
+MODEL5.py
+Same as model 4, but has plots. 

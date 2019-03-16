@@ -5,3 +5,5 @@ separate_lstm/News.csv
 separate_lstm/DowJones.csv
 djlstm/globalsave.pkl
 results/*
+weather/*
+weights/*

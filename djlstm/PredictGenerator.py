@@ -20,8 +20,8 @@ def unnormalize(price, std_price, mean_price):
     return(price)
     
 # Analyzes the predictions to see how accurate they are
-def model_show_predictions(predictions, y, deeper, wider, dropout, learning_rate,
-    std_price=0, mean_price=0):
+def model_show_predictions(txt_file,predictions, y, deeper, wider, dropout, learning_rate,
+    std_price=0, mean_price=0,):
     print('Predictions with PARAMS deeper={}_wider={}_dropout={}_lr={}'
         .format(deeper, wider, dropout, learning_rate))
 
@@ -98,3 +98,8 @@ def model_show_predictions(predictions, y, deeper, wider, dropout, learning_rate
 
     plt.savefig('../results/RESULTS_deeper={}_wider={}_dropout={}_lr={}.png'.
         format(deeper, wider, dropout, learning_rate))
+    txt_file.write("\n")
+    txt_file.write("\n")
+    txt_file.write("BEST HYPERPARAMETERS ON TEST SET")
+    txt_file.write("\n")
+    txt_file.write(str(direction) + "%")

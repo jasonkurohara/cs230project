@@ -1,0 +1,3 @@
+Current model: Deeper=False, Deeper2 = True, Wider=True, LR=0.001, Dropout=0.33
+val_loss: 0.012436791716246448
+

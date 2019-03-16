@@ -656,7 +656,7 @@ def build_model():
 
 
 
-max_count = 1
+max_count = 30
 
 
 
@@ -699,8 +699,8 @@ for count in range(max_count):
 
     history = model.fit([x_train,x_train, x2_train],
                                     y_train,
-                                    batch_size=512,
-                                    epochs=1,
+                                    batch_size=256,
+                                    epochs=100,
                                     validation_split=0.15,
                                     verbose=True,
                                     shuffle=True,

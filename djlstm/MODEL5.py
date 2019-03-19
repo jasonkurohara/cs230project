@@ -476,14 +476,14 @@ for row in range(dataset.shape[0]):
         lookback_array[row][0:] = dataset[(row-lookback):row].T
 
 
-
+print("X SHAPE")
 print(x_train.shape)
 print(x_dev.shape)
 print(x_test.shape)
 
-x2_train = lookback_array[0:1610][:]
-x2_dev = lookback_array[1610:1789][:]
-x2_test = lookback_array[1789:][:]
+x2_train = lookback_array[0:x_train.shape[0]][:]
+x2_dev = lookback_array[x_train.shape[0]:x_dev.shape[0]][:]
+x2_test = lookback_array[x_dev.shape[0]:][:]
 
 
 x2_train = np.array(x2_train)
@@ -656,7 +656,7 @@ def build_model():
 
 
 
-max_count = 30
+max_count = 20
 
 
 
@@ -670,7 +670,7 @@ best_wide = 0
 best_dropout = 0
 
 
-txt_file = open("../results/TRAINING&TEST SUMMARY","w")
+txt_file = open("../results/DEV&TEST_SUMMARY","w")
 
 
 histories = []
@@ -699,8 +699,8 @@ for count in range(max_count):
 
     history = model.fit([x_train,x_train, x2_train],
                                     y_train,
-                                    batch_size=256,
-                                    epochs=100,
+                                    batch_size=512,
+                                    epochs=1,
                                     validation_split=0.15,
                                     verbose=True,
                                     shuffle=True,
@@ -711,6 +711,8 @@ for count in range(max_count):
 
     histories.append((history, title))
 
+    print(x_dev.shape)
+    print(x2_dev.shape)
     score = model.evaluate([x_dev,x_dev,x2_dev],[y_dev],verbose = 0)
     print("DEV SET LOSS")
     print(score)
@@ -752,10 +754,17 @@ model.load_weights('../weights/deeper={}_deeper2={},wider={}_lr={}_dropout={}.h5
 
 predictions = model.predict([x_test,x_test,x2_test], verbose = True)
 
+
+
 # predictions = model.predict([x_test, x_test, x2_test])
-model_show_predictions(txt_file,predictions, y_test, deeper, wider, dropout, 
+model_show_predictions("test",txt_file,predictions, y_test, deeper, wider, dropout, 
                     lr, std_price=std_price, mean_price=mean_price)
 
+
+txt2_file = open("../results/TRAINING_SUMMARY","w")
+predictions2 = model.predict([x2_train,x_train,x2_train], verbose = True)
+model_show_predictions("train",txt2_file,predictions, y_train, deeper, wider, dropout, 
+                    lr, std_price=std_price, mean_price=mean_price)
 
 
 txt_file.close()

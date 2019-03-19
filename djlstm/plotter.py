@@ -23,11 +23,30 @@ def plot_metric(metric, histories, legend,
 		plt.plot(range(1,num_epochs+1), hist_tuple[0].history[metric])
 	plt.title(title)
 	plt.ylabel(metric)
-	plt.xlabel('epoch')
-	plt.legend(legend, loc='upper left')
+	plt.xlabel('Epoch')
+	plt.legend(legend, loc='upper right')
 	plt.show()
 	plt.savefig(destination_folder + title+'.png')
 	plt.clf()
+
+def plot_val_loss(histories, legend,
+	destination_folder = ""):
+	# summarize history for metric
+	metric = "val_loss"
+	title = "VALIDATION LOSS DURING TRAINING"
+	for hist_tuple in histories:
+		num_epochs = len(hist_tuple[0].history[metric])
+		print('len of epoch_count: ' + str(len(hist_tuple[0].history[metric])))
+		print('len of '+metric+': ' + str(len(hist_tuple[0].history[metric])))
+		plt.plot(range(1,num_epochs+1), hist_tuple[0].history[metric])
+	plt.title(title)
+	plt.ylabel("Validation Loss")
+	plt.xlabel('Epoch')
+	plt.legend(legend, loc='upper right')
+	plt.show()
+	plt.savefig(destination_folder + title+'.png')
+	plt.clf()
+
 
 # Plots models' performances based on given metrics
 # @param histories: list of tuples of the form 
@@ -48,6 +67,7 @@ def display_all_model_plots(histories, folder_name = ""):
 	for metric in metrics: 
 		plot_metric(metric, histories, legend,
 			destination_folder = folder_name)
+	plot_val_loss(histories, legend, destination_folder=folder_name)
 
 '''
 TO INCORPORATE PLOTTER (display_all_model_plots) INTO OUR ML MODEL:

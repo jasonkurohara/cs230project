@@ -616,7 +616,7 @@ best_wide = 0
 best_dropout = 0
 
 
-txt_file = open("../results/DEV&TEST SUMMARY","w")
+txt_file = open("../results/DEV&TEST SUMMARY MODEL 5","w")
 
 
 histories = []

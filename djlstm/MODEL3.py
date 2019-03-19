@@ -36,7 +36,7 @@ nltk.download('stopwords')
 from PredictGenerator import model_show_predictions
 import plotter
 
-"""
+
 
 dj = pd.read_csv("../data/DowJones.csv") #read in stock prices
 news = pd.read_csv("../data/News.csv") #read in news data
@@ -352,7 +352,7 @@ lengths.describe()
 # These values are chosen to not have an excessively long training time and 
 # balance the number of headlines used and the number of words from each headline.
 max_headline_length = 16
-max_daily_length = 200
+max_daily_length = 250
 pad_headlines = []
 
 for date in int_headlines:
@@ -413,12 +413,12 @@ print("SAVING ARRAYS")
 
 
 
-"""
+
 
 import dill                            
-filename = '../data/globalsave.pkl'
-#dill.dump_session(filename)  #Save session
-dill.load_session(filename) # load the session
+filename = '../data/globalsaveMODEL3.pkl'
+dill.dump_session(filename)  #Save session
+#dill.load_session(filename) # load the session
 
 dj = pd.read_csv("../data/DowJones.csv") #read in stock prices
 news = pd.read_csv("../data/News.csv") #read in news data
@@ -605,6 +605,7 @@ def build_model():
     print(complete_model)
     return complete_model
 
+txt_file = open("../results/DEV&TEST SUMMARY MODEL 3","w")
 
 
 # Use grid search to help find a better model
@@ -634,13 +635,55 @@ for deeper in [True, False]:
                                     verbose=True,
                                     shuffle=True,
                                     callbacks = callbacks)
-                predictions = model.predict([x_test, x_test, x2_test])
-                model_show_predictions(predictions, y_test, deeper, wider, dropout, 
-                    learning_rate, std_price=std_price, mean_price=mean_price)
 
 
-         
-            #    plotter.display_all_plots(history,deeper,wider,dropout,learning_rate)
+                histories.append((history, title))
+
+                score = model.evaluate([x_dev,x_dev,x2_dev],[y_dev],verbose = 0)
+                print("DEV SET LOSS")
+                print(score)
+                txt_file.write(title)
+                txt_file.write("\n")
+                txt_file.write("val_loss: " + str(score))
+                txt_file.write("\n")
+                txt_file.write("\n")
+
+                if score < best_val:
+                    best_model = model
+                    best_val = (history.history['loss'])[-1]
+                    best_deep = deeper
+                    best_deep2 = deeper2
+                    best_wide = wider
+                    best_lr = lr
+                    best_dropout = dropout
+                    print("SAVING BESt")
+                    save_best_weights = '../weights/deeper={}_deeper2={},wider={}_lr={}_dropout={}.h5'.format(
+                                best_deep,best_deep2,best_wide,best_lr,best_dropout)
+                    print('saving best weights: ' + save_best_weights)
+                    best_model.save(save_best_weights)
+
+                # Make predictions with the best weights
+plotter.display_all_model_plots(histories, folder_name="metrics")
+
+# Need to rebuild model in case it is different from the model that was trained most recently.  
+deeper = best_deep
+deeper2 = best_deep2
+wider = best_wide
+lr = best_lr
+dropout = best_dropout
+model = build_model()
+
+model.load_weights('../weights/deeper={}_deeper2={},wider={}_lr={}_dropout={}.h5'.format(
+                    best_deep,best_deep2,best_wide,best_lr,best_dropout))
+#model.load_weights('./question_pairs_weights_deeper=True_wider=True_lr=0.001_dropout=0.3.h5')
+
+predictions = model.predict([x_test, x_test, x2_test], verbose = true)
+model_show_predictions(predictions, y_test, deeper, wider, dropout, 
+    learning_rate, std_price=std_price, mean_price=mean_price)
+
+
+
+#    plotter.display_all_plots(history,deeper,wider,dropout,learning_rate)
 
 
 '''

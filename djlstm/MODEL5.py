@@ -393,8 +393,8 @@ print(mean_price)
 print(std_price)
 def normalize(price):
     return (price - mean_price)/std_price
-"""
 
+"""
 
 import dill                            
 filename = '../data/globalsave.pkl'
@@ -656,7 +656,7 @@ def build_model():
 
 
 
-max_count = 30
+max_count = 5
 
 
 

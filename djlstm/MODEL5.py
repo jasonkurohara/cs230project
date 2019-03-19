@@ -46,36 +46,27 @@ dj.head()
 dj.isnull().sum()
 news.isnull().sum()
 news.head()
-
 print("Dow Jones Raw Data Shape: " + str(dj.shape))
 print("Raw News Data Shae: " + str(news.shape))
-
 # Compare the number of unique dates. We want matching values.
 print("Number of Unique Dates in DJ data set: " + str(len(set(dj.Date))))
 print("Number of Unique Dates in news headlines: " + str(len(set(news.Date))))
-
 # Remove the extra dates that are in news
 news = news[news.Date.isin(dj.Date)]
-
 print("Removed extra dates in DJ data set: " + str(len(set(dj.Date))))
 print("Removed extra dates in DJ data set: " + str(len(set(news.Date))))
-
 # Calculate the difference in opening prices between the following and current day.
 # The model will try to predict how much the Open value will change beased on the news.
 dj = dj.set_index('Date').diff(periods=1)
 dj['Date'] = dj.index
 dj = dj.reset_index(drop=True)
-
 dj = dj.drop(['High','Low','Close','Volume','Adj Close'], 1) # Remove unneeded features from the dataset
-
 dj.head()
 dj = dj[dj.Open.notnull()] # Remove top row since it has a null value.
 dj.isnull().sum() # Check if there are any more null values.
-
 # Create a list of the opening prices and their corresponding daily headlines from the news
 price = []
 headlines = []
-
 for row in dj.iterrows():
     daily_headlines = []
     date = row[1]['Date']
@@ -87,8 +78,6 @@ for row in dj.iterrows():
     headlines.append(daily_headlines)
     if len(price) % 500 == 0:
         print(len(price))
-
-
 # A list of contractions from http://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python
 contractions = { 
 "ain't": "am not",
@@ -165,8 +154,6 @@ contractions = {
 "you'll": "you will",
 "you're": "you are"
 }
-
-
 # FUNCTION clean_text = The purpose of this funciton is to remove unwanted characters
 # and format the text to create fewer null words embeddings
 def clean_text(text, remove_stopwords = True):
@@ -205,25 +192,18 @@ def clean_text(text, remove_stopwords = True):
         stops = set(stopwords.words("english"))
         text = [w for w in text if not w in stops]
         text = " ".join(text)
-
     return text
-
 # Clean the headlines
 clean_headlines = []
-
 for daily_headlines in headlines:
     clean_daily_headlines = []
     for headline in daily_headlines:
         clean_daily_headlines.append(clean_text(headline))
     clean_headlines.append(clean_daily_headlines)
-
-
 # Take a look at some headlines to ensure everything was cleaned well
 print("VERIFY CLEANING TOOK PLACE: " + str(clean_headlines[0]))
-
 # Find the number of times each word was used and the size of the vocabulary
 word_counts = {}
-
 for date in clean_headlines:
     for headline in date:
         for word in headline.split():
@@ -233,8 +213,6 @@ for date in clean_headlines:
                 word_counts[word] += 1
             
 print("Size of Vocabulary:", len(word_counts))
-
-
 # LOAD GLOVE EMBEDDINGS
 embeddings_index = {}
 with open('../data/glove.840B.300d.txt', encoding='utf-8') as f:
@@ -243,14 +221,10 @@ with open('../data/glove.840B.300d.txt', encoding='utf-8') as f:
         word = values[0]
         embedding = np.asarray(values[1:], dtype='float32')
         embeddings_index[word] = embedding
-
-
 print('Word embeddings:', len(embeddings_index))
-
 # Find the number of words that are missing from GloVe, and are used more than our threshold.
 missing_words = 0
 threshold = 10
-
 for word, count in word_counts.items():
     if count > threshold:
         if word not in embeddings_index:
@@ -260,41 +234,30 @@ missing_ratio = round(missing_words/len(word_counts),4)*100
             
 print("Number of words missing from GloVe:", missing_words)
 print("Percent of words that are missing from vocabulary: {}%".format(missing_ratio))
-
-
 # Limit the vocab that we will use to words that appear ≥ threshold or are in GloVe
 #dictionary to convert words to integers
 vocab_to_int = {} 
-
 value = 0
 for word, count in word_counts.items():
     if count >= threshold or word in embeddings_index:
         vocab_to_int[word] = value
         value += 1
-
 # Special tokens that will be added to our vocab
 codes = ["<UNK>","<PAD>"]   
-
 # Add codes to vocab
 for code in codes:
     vocab_to_int[code] = len(vocab_to_int)
-
 # Dictionary to convert integers to words
 int_to_vocab = {}
 for word, value in vocab_to_int.items():
     int_to_vocab[value] = word
-
 usage_ratio = round(len(vocab_to_int) / len(word_counts),4)*100
-
 print("Total Number of Unique Words:", len(word_counts))
 print("Number of Words we will use:", len(vocab_to_int))
 print("Percent of Words we will use: {}%".format(usage_ratio))
-
 # Need to use 300 for embedding dimensions to match GloVe's vectors.
 embedding_dim = 300
-
 nb_words = len(vocab_to_int)
-
 # Create matrix with default values of zero
 word_embedding_matrix = np.zeros((nb_words, embedding_dim))
 for word, i in vocab_to_int.items():
@@ -305,20 +268,14 @@ for word, i in vocab_to_int.items():
         new_embedding = np.array(np.random.uniform(-1.0, 1.0, embedding_dim))
         embeddings_index[word] = new_embedding
         word_embedding_matrix[i] = new_embedding
-
 # Check if value matches len(vocab_to_int)
 print(len(word_embedding_matrix))
-
-
 # Note: The embeddings will be updated as the model trains, so our new 'random' embeddings will be more accurate by the end of training. This is also why we want to only use words that appear at least 10 times. By having the model see the word numerous timesm it will be better able to understand what it means. 
-
 # Change the text from words to integers
 # If word is not in vocab, replace it with <UNK> (unknown)
 word_count = 0
 unk_count = 0
-
 int_headlines = []
-
 for date in clean_headlines:
     int_daily_headlines = []
     for headline in date:
@@ -332,31 +289,24 @@ for date in clean_headlines:
                 unk_count += 1
         int_daily_headlines.append(int_headline)
     int_headlines.append(int_daily_headlines)
-
 unk_percent = round(unk_count/word_count,4)*100
-
 print("Total number of words in headlines:", word_count)
 print("Total number of UNKs in headlines:", unk_count)
 print("Percent of words that are UNK: {}%".format(unk_percent))
-
 # Find the length of headlines
 lengths = []
 for date in int_headlines:
     for headline in date:
         lengths.append(len(headline))
-
 # Create a dataframe so that the values can be inspected
 lengths = pd.DataFrame(lengths, columns=['counts'])
-
 lengths.describe()
-
 # Limit the length of a day's news to 200 words, and the length of any headline to 16 words.
 # These values are chosen to not have an excessively long training time and 
 # balance the number of headlines used and the number of words from each headline.
 max_headline_length = 16
 max_daily_length = 200
 pad_headlines = []
-
 for date in int_headlines:
     pad_daily_headlines = []
     for headline in date:
@@ -379,10 +329,7 @@ for date in int_headlines:
     else:
         pad_daily_headlines = pad_daily_headlines[:max_daily_length]
     pad_headlines.append(pad_daily_headlines)
-
-
 # In[304]:
-
 # Normalize opening prices (target values)
 max_price = max(price)
 min_price = min(price)
@@ -394,7 +341,6 @@ print(std_price)
 def normalize(price):
     return (price - mean_price)/std_price
 """
-
 
 import dill                            
 filename = '../data/globalsave.pkl'
@@ -476,14 +422,14 @@ for row in range(dataset.shape[0]):
         lookback_array[row][0:] = dataset[(row-lookback):row].T
 
 
-print("X SHAPE")
+
 print(x_train.shape)
 print(x_dev.shape)
 print(x_test.shape)
 
-x2_train = lookback_array[0:x_train.shape[0]][:]
-x2_dev = lookback_array[x_train.shape[0]:x_dev.shape[0]][:]
-x2_test = lookback_array[x_dev.shape[0]:][:]
+x2_train = lookback_array[0:1610][:]
+x2_dev = lookback_array[1610:1789][:]
+x2_test = lookback_array[1789:][:]
 
 
 x2_train = np.array(x2_train)
@@ -656,7 +602,7 @@ def build_model():
 
 
 
-max_count = 20
+max_count = 10
 
 
 
@@ -670,7 +616,7 @@ best_wide = 0
 best_dropout = 0
 
 
-txt_file = open("../results/DEV&TEST_SUMMARY","w")
+txt_file = open("../results/TRAINING&TEST SUMMARY","w")
 
 
 histories = []
@@ -699,8 +645,8 @@ for count in range(max_count):
 
     history = model.fit([x_train,x_train, x2_train],
                                     y_train,
-                                    batch_size=512,
-                                    epochs=1,
+                                    batch_size=256,
+                                    epochs=100,
                                     validation_split=0.15,
                                     verbose=True,
                                     shuffle=True,
@@ -711,8 +657,6 @@ for count in range(max_count):
 
     histories.append((history, title))
 
-    print(x_dev.shape)
-    print(x2_dev.shape)
     score = model.evaluate([x_dev,x_dev,x2_dev],[y_dev],verbose = 0)
     print("DEV SET LOSS")
     print(score)
@@ -754,17 +698,13 @@ model.load_weights('../weights/deeper={}_deeper2={},wider={}_lr={}_dropout={}.h5
 
 predictions = model.predict([x_test,x_test,x2_test], verbose = True)
 
-
-
 # predictions = model.predict([x_test, x_test, x2_test])
 model_show_predictions("test",txt_file,predictions, y_test, deeper, wider, dropout, 
                     lr, std_price=std_price, mean_price=mean_price)
 
-
 txt2_file = open("../results/TRAINING_SUMMARY","w")
-predictions2 = model.predict([x2_train,x_train,x2_train], verbose = True)
-model_show_predictions("train",txt2_file,predictions, y_train, deeper, wider, dropout, 
+predictions2 = model.predict([x_train,x_train,x2_train], verbose = True)
+model_show_predictions("train",txt2_file,predictions2, y_train, deeper, wider, dropout, 
                     lr, std_price=std_price, mean_price=mean_price)
-
 
 txt_file.close()

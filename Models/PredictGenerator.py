@@ -213,6 +213,7 @@ def get_accuracy(predictions, y, std_price = 0, mean_price = 0):
         else:
             direction_test.append(0)
 
+    from sklearn.metrics import confusion_matrix
 
     # Calculate if the predicted direction matched the actual direction
     direction = acc(direction_test, direction_pred)
@@ -220,5 +221,7 @@ def get_accuracy(predictions, y, std_price = 0, mean_price = 0):
     _mae = mae(unnorm_y, unnorm_predictions) #median absolute error
     _rmse = np.sqrt(mse(y, predictions)) # root mean squared error
     _r2 = r2(unnorm_y, unnorm_predictions) #R squared error
+    print("CONFUSION MATRIX")
+    print(confusion_matrix(direction_test,direction_pred).ravel())
     return (direction,_mae,_rmse,_r2)
 

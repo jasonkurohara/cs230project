@@ -717,4 +717,5 @@ predictions2 = model.predict([x_train,x_train,x2_train], verbose = True)
 pg.model_show_predictions("train",txt2_file,predictions2, y_train, deeper, wider, dropout, 
                     lr, std_price=std_price, mean_price=mean_price)
 
+get_accuracy(predictions2,y_test,std_price,mean_price)
 txt_file.close()

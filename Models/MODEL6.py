@@ -620,11 +620,11 @@ txt_file = open("../results/DEV&TEST SUMMARY MODEL 6","w")
 
 
 histories = []
-for deeper in [True, False]:
-    for deeper2 in [True, False]:
-        for wider in [True, False]:
+for deeper in [True]:
+    for deeper2 in [True]:
+        for wider in [True]:
             for learning_rate in [0.001]:
-                for dropout in [0.35,0.37,0.39,0.41,0.43]:
+                for dropout in [0.35]:
 
                     model = build_model()
                     print()
@@ -712,10 +712,13 @@ predictions = model.predict([x_test,x_test,x2_test], verbose = True)
 pg.model_show_predictions("test",txt_file,predictions, y_test, deeper, wider, dropout, 
                     lr, std_price=std_price, mean_price=mean_price)
 
+
+
 txt2_file = open("../results/TRAINING_SUMMARY","w")
 predictions2 = model.predict([x_train,x_train,x2_train], verbose = True)
 pg.model_show_predictions("train",txt2_file,predictions2, y_train, deeper, wider, dropout, 
                     lr, std_price=std_price, mean_price=mean_price)
+print("prediction confusion")
+pg.get_accuracy(predictions,y_test,std_price,mean_price)
 
-get_accuracy(predictions2,y_test,std_price,mean_price)
 txt_file.close()

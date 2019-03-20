@@ -1,1 +1,1 @@
-This folder saves weights.
+This folder saves directory saves weights for the network

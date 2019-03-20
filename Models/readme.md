@@ -15,4 +15,4 @@ MODEL5.py
 Same as model 4, but has plots.
 
 MODEL6.py
-Uses gridsearch on best hyperparameters. 
+Final model used for best accuracy. Uses gridsearch on best hyperparameters. 

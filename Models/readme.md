@@ -12,4 +12,7 @@ MODEL4.py
 Uses random search instead of grid search for hyper paramater tuning.
 
 MODEL5.py
-Same as model 4, but has plots. 
+Same as model 4, but has plots.
+
+MODEL6.py
+Uses gridsearch on best hyperparameters. 
